@@ -356,14 +356,29 @@ with st.sidebar:
         "🛡 AI 사전 예방 정비",
         "🏅 클린하우스 마일리지",
         "🔮 Vision 2030 예측분석",
-    ], label_visibility="collapsed")
+    ], label_visibility="collapsed",
+    help="보고 싶은 메뉴를 클릭하세요 🖱️\n\n"
+         "📊 통합 대시보드 — 전체 현황 한눈에\n"
+         "✈ 비전AI — 드론·앱 이미지 AI 분석\n"
+         "🤖 RPA — 관리비·계약·일정 자동화\n"
+         "📋 민원 — 민원 접수·처리 현황\n"
+         "📡 IoT — 센서 실시간 모니터링\n"
+         "🛡 예방 정비 — AI 사고 예방 지시서\n"
+         "🏅 마일리지 — 입주민 참여 인센티브\n"
+         "🔮 Vision 2030 — 고장·에너지 예측"
+    )
 
     st.divider()
     st.markdown("**수요처 선택**")
     demand_site = st.radio("", ["SH 서울주택도시공사", "경상북도개발공사"],
-                           label_visibility="collapsed")
+                           label_visibility="collapsed",
+                           help="데이터를 조회할 공공주택 기관을 선택하세요 🏢\n\n"
+                                "• SH공사: 서울 5개 단지 (강남·서초·마포·강서·노원)\n"
+                                "• 경북개발공사: 경북 2개 단지 (구미·포항)")
     cpx_list = COMPLEXES_SH if "SH" in demand_site else COMPLEXES_GB
-    selected_cpx = st.selectbox("단지 선택", cpx_list)
+    selected_cpx = st.selectbox("단지 선택", cpx_list,
+                                help="세부 데이터를 볼 단지를 고르세요 🏘️\n"
+                                     "선택한 단지가 AI 분석·민원 접수의 기본 단지로 사용됩니다.")
 
     st.divider()
     st.caption(f"🕐 {datetime.now().strftime('%Y-%m-%d %H:%M')}")
@@ -501,8 +516,14 @@ elif page == "✈ 비전AI · 드론 정밀진단":
         col_l, col_r = st.columns([1, 1])
         with col_l:
             upload_type = st.radio("입력 방식", ["📱 앱 업로드 (입주민)", "✈ 드론 스캔 (HSIA)"],
-                                   horizontal=True)
-            uploaded = st.file_uploader("이미지 업로드", type=["jpg","jpeg","png"])
+                                   horizontal=True,
+                                   help="이미지를 어떤 방식으로 입력할지 선택하세요 📷\n\n"
+                                        "• 앱 업로드: 입주민이 스마트폰으로 촬영한 사진\n"
+                                        "• 드론 스캔: HSIA 드론이 외벽을 정밀 촬영한 사진")
+            uploaded = st.file_uploader("이미지 업로드", type=["jpg","jpeg","png"],
+                                        help="분석할 건물 외벽·내부 사진을 올려주세요 🖼️\n"
+                                             "지원 형식: JPG, JPEG, PNG (최대 50MB)\n"
+                                             "사진이 없으면 아래 샘플 시나리오를 선택하세요.")
 
             st.divider()
             sample = st.selectbox("또는 샘플 시나리오 선택", [
@@ -511,8 +532,15 @@ elif page == "✈ 비전AI · 드론 정밀진단":
                 "③ 드라이비트 화재취약 — 외벽 전면 (고위험)",
                 "④ 옥상 박리손상 2.1mm (고위험)",
                 "⑤ 수평균열 0.08mm — 계단실 (저위험)",
-            ])
-            run_btn = st.button("🤖 Y-MaskNet 분석 실행", type="primary", use_container_width=True)
+            ], help="실제 사진이 없을 때 미리 준비된 예시를 선택하세요 📋\n\n"
+                    "• 🔴 고위험: 즉시 전문가 점검 필요\n"
+                    "• 🟡 중위험: 30일 내 보수 권고\n"
+                    "• 🟢 저위험: 정기점검 유지")
+            run_btn = st.button("🤖 Y-MaskNet 분석 실행", type="primary", use_container_width=True,
+                                help="버튼을 클릭하면 AI(Y-MaskNet)가 이미지를 분석합니다 🤖\n\n"
+                                     "균열 폭(mm), 누수, 드라이비트 화재취약 구간을\n"
+                                     "자동으로 탐지하고 위험도를 판정합니다.\n"
+                                     "분석 소요 시간: 약 2초")
 
         with col_r:
             if run_btn:
@@ -581,10 +609,23 @@ elif page == "✈ 비전AI · 드론 정밀진단":
 
                 # 결과 메트릭
                 r1,r2,r3,r4 = st.columns(4)
-                r1.metric("탐지 유형", sc["유형"])
-                r2.metric("AI 신뢰도", f"{int(sc['신뢰']*100)}%")
-                r3.metric("위험도", f"{'🔴' if sc['위험']=='고' else '🟡' if sc['위험']=='중' else '🟢'} {sc['위험']}")
-                r4.metric("손상폭", f"{sc['폭']} mm" if sc['폭'] > 0 else "면적 분석")
+                r1.metric("탐지 유형", sc["유형"],
+                          help="AI가 이미지에서 탐지한 손상의 종류입니다 🔍\n"
+                               "균열·누수·드라이비트·박리 4가지 유형을 자동 구분합니다.")
+                r2.metric("AI 신뢰도", f"{int(sc['신뢰']*100)}%",
+                          help="AI 탐지 결과에 대한 신뢰도(확신도)입니다 🎯\n"
+                               "• 90%↑: 매우 신뢰할 수 있는 결과\n"
+                               "• 70~90%: 신뢰 가능, 현장 확인 권장\n"
+                               "• 70%↓: 재촬영 또는 전문가 확인 필요")
+                r3.metric("위험도", f"{'🔴' if sc['위험']=='고' else '🟡' if sc['위험']=='중' else '🟢'} {sc['위험']}",
+                          help="AI가 탐지 결과를 기반으로 판정한 위험도입니다 🚦\n\n"
+                               "• 🔴 고: 기준치 초과, 즉시 전문가 점검 필요\n"
+                               "• 🟡 중: 30일 내 보수 권고\n"
+                               "• 🟢 저: 정기점검 수준, 모니터링 유지")
+                r4.metric("손상폭", f"{sc['폭']} mm" if sc['폭'] > 0 else "면적 분석",
+                          help="균열의 경우 폭(mm)을 정량 측정합니다 📏\n"
+                               "기준: 0.2mm 초과 시 고위험 판정\n"
+                               "누수·드라이비트는 면적(cm²)으로 분석합니다.")
 
                 # 위험도별 알림
                 if sc["위험"] == "고":
@@ -620,7 +661,11 @@ elif page == "✈ 비전AI · 드론 정밀진단":
 
     with tab2:
         st.markdown('<div class="sh">📋 전체 AI 탐지 결과 목록</div>', unsafe_allow_html=True)
-        risk_f = st.multiselect("위험도 필터", ["고","중","저"], default=["고","중","저"], key="dmg_risk")
+        risk_f = st.multiselect("위험도 필터", ["고","중","저"], default=["고","중","저"], key="dmg_risk",
+                               help="표시할 위험도 등급을 선택하세요 🔍\n\n"
+                                    "• 🔴 고: 즉시 조치 필요 (균열 0.2mm↑ 등)\n"
+                                    "• 🟡 중: 30일 내 보수 권고\n"
+                                    "• 🟢 저: 정기점검 수준, 당장 위험 없음")
         disp = damage_df[damage_df["위험도"].isin(risk_f)].copy()
         icon = {"고":"🔴","중":"🟡","저":"🟢"}
         disp["위험도"] = disp["위험도"].map(lambda r: f"{icon.get(r,'')} {r}")
@@ -691,10 +736,17 @@ elif page == "🤖 RPA 행정 자동화":
         st.markdown('<div class="sh">📄 관리비 고지서 자동 발행 현황 (RPA 80% 자동화)</div>', unsafe_allow_html=True)
 
         b1, b2, b3, b4 = st.columns(4)
-        b1.metric("총 발행 세대", f"{len(billing_df):,}세대")
-        b2.metric("자동발행 완료", f"{(billing_df['발행상태']=='자동발행완료').sum():,}건")
-        b3.metric("오류 확인필요", f"{(billing_df['발행상태']=='오류확인필요').sum()}건", delta="수동처리 필요", delta_color="inverse")
-        b4.metric("자동화율", "80.0%", delta="목표 달성", delta_color="normal")
+        b1.metric("총 발행 세대", f"{len(billing_df):,}세대",
+                  help="이번 달 관리비 고지서 발행 대상 전체 세대 수입니다 🏠")
+        b2.metric("자동발행 완료", f"{(billing_df['발행상태']=='자동발행완료').sum():,}건",
+                  help="RPA가 사람 개입 없이 자동으로 발행 완료한 건수입니다 🤖\n"
+                       "전체의 80%를 자동화하여 담당자 업무를 대폭 줄였습니다.")
+        b3.metric("오류 확인필요", f"{(billing_df['발행상태']=='오류확인필요').sum()}건", delta="수동처리 필요", delta_color="inverse",
+                  help="자동 발행 중 오류가 발생해 담당자가 직접 확인해야 하는 건수입니다 ⚠️\n"
+                       "오류 원인은 주로 세대 정보 불일치입니다.")
+        b4.metric("자동화율", "80.0%", delta="목표 달성", delta_color="normal",
+                  help="전체 고지서 발행 업무 중 RPA가 자동 처리한 비율입니다 📈\n"
+                       "목표: 80% 이상 — 현재 달성 완료")
 
         st.markdown("**📋 고지서 발행 샘플 (상위 30건)**")
         st.dataframe(billing_df.head(30)[["단지","호수","관리비_만원","전기료_만원","수도료_만원","청구월","발행상태","발행일시"]],
@@ -725,9 +777,14 @@ elif page == "🤖 RPA 행정 자동화":
         normal = contract_df[contract_df["잔여일수"] > 60]
 
         cc1, cc2, cc3 = st.columns(3)
-        cc1.metric("전체 계약", f"{len(contract_df)}건")
-        cc2.metric("60일내 만료", f"{len(soon)}건", delta="알림발송 완료", delta_color="normal")
-        cc3.metric("이미 만료", f"{len(urgent)}건", delta="갱신협의 진행중", delta_color="inverse")
+        cc1.metric("전체 계약", f"{len(contract_df)}건",
+                   help="현재 관리 중인 전체 임대 계약 건수입니다 📄")
+        cc2.metric("60일내 만료", f"{len(soon)}건", delta="알림발송 완료", delta_color="normal",
+                   help="앞으로 60일 안에 계약이 끝나는 세대입니다 ⏳\n"
+                        "RPA가 입주민에게 자동으로 갱신 안내 문자를 보냈습니다.")
+        cc3.metric("이미 만료", f"{len(urgent)}건", delta="갱신협의 진행중", delta_color="inverse",
+                   help="계약 만료일이 이미 지난 세대입니다 🔴\n"
+                        "담당자가 갱신 협의를 진행 중입니다.")
 
         st.markdown("**⚠️ 60일 이내 만료 예정 계약**")
         disp_c = soon.copy()
@@ -747,7 +804,10 @@ elif page == "🤖 RPA 행정 자동화":
         st.markdown('<div class="sh">🗓 AI 기반 점검 일정 자동 생성 (RPA 90% 자동화)</div>', unsafe_allow_html=True)
         st.info("노후도 점수, 마지막 점검일, 탐지 이력을 종합하여 AI가 최적 점검 일정을 자동 생성합니다.")
 
-        gen_schedule = st.button("🤖 AI 점검 일정 자동 생성", type="primary")
+        gen_schedule = st.button("🤖 AI 점검 일정 자동 생성", type="primary",
+                               help="버튼을 클릭하면 AI가 단지별 점검 일정을 자동으로 만들어줍니다 📅\n\n"
+                                    "노후도 점수 + 마지막 점검일 + 손상 탐지 이력을 종합하여\n"
+                                    "가장 시급한 단지부터 우선순위를 정해 일정을 생성합니다.")
         if gen_schedule:
             schedule_rows = []
             for _, row in facility_df.iterrows():
@@ -816,13 +876,23 @@ elif page == "📋 AI 민원 관리":
         # 필터
         f1,f2,f3,f4 = st.columns(4)
         with f1: f_type = st.multiselect("유형", list(COMPLAINT_TYPES.keys()),
-                                          default=list(COMPLAINT_TYPES.keys()), key="c1")
+                                          default=list(COMPLAINT_TYPES.keys()), key="c1",
+                                          help="보고 싶은 민원 유형만 선택하세요 📋\n"
+                                               "체크 해제하면 해당 유형은 목록에서 숨겨집니다.")
         with f2: f_risk = st.multiselect("위험도", ["고","중","저"],
-                                          default=["고","중","저"], key="c2")
+                                          default=["고","중","저"], key="c2",
+                                          help="민원 위험도로 필터링합니다 🚦\n\n"
+                                               "• 고: 구조 안전 관련, 즉시 대응\n"
+                                               "• 중: 3일 내 처리\n"
+                                               "• 저: 7일 내 처리")
         with f3: f_stat = st.multiselect("상태", complaint_df["상태"].unique().tolist(),
-                                          default=complaint_df["상태"].unique().tolist(), key="c3")
+                                          default=complaint_df["상태"].unique().tolist(), key="c3",
+                                          help="민원 처리 단계로 필터링합니다 🔄\n\n"
+                                               "접수 → AI분류완료 → 담당자배정 → 현장처리중 → 완료")
         with f4: f_site = st.multiselect("수요처", ["SH공사","경북개발공사"],
-                                          default=["SH공사","경북개발공사"], key="c4")
+                                          default=["SH공사","경북개발공사"], key="c4",
+                                          help="어느 기관 단지의 민원을 볼지 선택하세요 🏢\n"
+                                               "둘 다 선택하면 전체 민원이 표시됩니다.")
 
         fc = complaint_df[
             complaint_df["유형"].isin(f_type) &
@@ -862,15 +932,36 @@ elif page == "📋 AI 민원 관리":
         with st.form("new_complaint"):
             r1,r2 = st.columns(2)
             with r1:
-                nc_site = st.selectbox("수요처", ["SH공사","경북개발공사"])
-                nc_cpx = st.selectbox("단지", ALL_COMPLEXES)
-                nc_unit = st.text_input("호수", placeholder="예: 101동 302호")
-                nc_type = st.selectbox("손상 유형", list(COMPLAINT_TYPES.keys()))
+                nc_site = st.selectbox("수요처", ["SH공사","경북개발공사"],
+                                       help="민원을 접수할 기관을 선택하세요 🏢\n"
+                                            "• SH공사: 서울 소재 단지\n"
+                                            "• 경북개발공사: 경북 소재 단지")
+                nc_cpx = st.selectbox("단지", ALL_COMPLEXES,
+                                      help="문제가 발생한 단지를 선택하세요 🏘️\n"
+                                           "단지명과 준공연도가 함께 표시됩니다.")
+                nc_unit = st.text_input("호수", placeholder="예: 101동 302호",
+                                        help="어느 동·호수에서 발생한 문제인지 입력하세요 🚪\n"
+                                             "예) 101동 302호, 지하 1층 공용부 등")
+                nc_type = st.selectbox("손상 유형", list(COMPLAINT_TYPES.keys()),
+                                       help="발생한 문제의 종류를 선택하세요 🔧\n"
+                                            "AI가 선택한 유형을 기반으로 위험도를 자동 분류합니다.")
             with r2:
-                nc_loc = st.text_input("손상 위치", placeholder="예: 화장실 천장, 주방 수전 하단")
-                nc_desc = st.text_area("상세 설명", placeholder="언제부터 생겼는지, 어느 정도 심한지 등", height=90)
-                nc_photo = st.file_uploader("사진 첨부", type=["jpg","jpeg","png"])
-            submit_c = st.form_submit_button("📤 민원 접수하기", type="primary", use_container_width=True)
+                nc_loc = st.text_input("손상 위치", placeholder="예: 화장실 천장, 주방 수전 하단",
+                                       help="건물 내 어느 위치에 문제가 있는지 구체적으로 입력하세요 📍\n"
+                                            "예) 화장실 천장, 주방 수전 하단, 거실 벽면 등")
+                nc_desc = st.text_area("상세 설명", placeholder="언제부터 생겼는지, 어느 정도 심한지 등", height=90,
+                                       help="문제 상황을 자세히 설명해주세요 📝\n\n"
+                                            "• 언제부터 시작됐나요?\n"
+                                            "• 얼마나 심각한가요? (범위, 냄새, 소리 등)\n"
+                                            "• 이전에 같은 문제가 있었나요?\n"
+                                            "자세할수록 AI가 더 정확하게 분류합니다.")
+                nc_photo = st.file_uploader("사진 첨부", type=["jpg","jpeg","png"],
+                                            help="문제가 있는 부분을 찍은 사진을 첨부하세요 📸\n"
+                                                 "사진이 있으면 AI 분류 정확도가 높아집니다.\n"
+                                                 "지원 형식: JPG, JPEG, PNG (최대 50MB)")
+            submit_c = st.form_submit_button("📤 민원 접수하기", type="primary", use_container_width=True,
+                                             help="클릭하면 민원이 즉시 접수되고 AI가 자동 분류합니다 ✅\n"
+                                                  "위험도에 따라 담당자에게 자동으로 알림이 발송됩니다.")
 
         if submit_c:
             with st.spinner("AI 분류 엔진 분석 중..."):
@@ -880,10 +971,19 @@ elif page == "📋 AI 민원 관리":
             ai_score = round(random.uniform(0.78, 0.97), 2)
             st.success(f"✅ 민원 접수 완료 — **{new_num}**")
             m1,m2,m3,m4 = st.columns(4)
-            m1.metric("민원번호", new_num)
-            m2.metric("AI 위험도 판정", f"{'🔴' if info['위험도']=='고' else '🟡' if info['위험도']=='중' else '🟢'} {info['위험도']}")
-            m3.metric("AI 신뢰도", f"{int(ai_score*100)}%")
-            m4.metric("RPA 자동화율", f"{info['rpa자동화']}%")
+            m1.metric("민원번호", new_num,
+                      help="AI가 자동 부여한 민원 고유 번호입니다 🔢\n이 번호로 처리 현황을 추적할 수 있습니다.")
+            m2.metric("AI 위험도 판정", f"{'🔴' if info['위험도']=='고' else '🟡' if info['위험도']=='중' else '🟢'} {info['위험도']}",
+                      help="AI가 손상 유형을 분석해 판정한 위험도입니다 🚦\n\n"
+                           "• 🔴 고: 구조 안전 위험, 즉시 대응\n"
+                           "• 🟡 중: 3일 내 현장 점검\n"
+                           "• 🟢 저: 7일 내 정기 처리")
+            m3.metric("AI 신뢰도", f"{int(ai_score*100)}%",
+                      help="AI 자동 분류 결과에 대한 신뢰도입니다 🎯\n"
+                           "90%↑: 매우 신뢰 / 70~90%: 담당자 확인 권장 / 70%↓: 수동 분류")
+            m4.metric("RPA 자동화율", f"{info['rpa자동화']}%",
+                      help="이 유형의 민원 처리에서 RPA가 자동으로 처리하는 비율입니다 🤖\n"
+                           "높을수록 담당자 개입 없이 자동으로 처리됩니다.")
             if info["위험도"] == "고":
                 st.error("🚨 **고위험 민원** — 담당팀장에게 즉시 문자 발송 및 긴급 작업지시서 생성 완료")
             elif info["위험도"] == "중":
@@ -928,12 +1028,21 @@ elif page == "📡 IoT · 디지털 트윈":
     latest = iot_df.iloc[-1]
     c1,c2,c3,c4,c5 = st.columns(5)
 
+    SENSOR_HELP = {
+        "온도":   "실내 온도를 측정합니다 🌡️\n기준(30°C) 초과 시 환기 권고 문자를 자동 발송합니다.",
+        "습도":   "실내 습도를 측정합니다 💧\n기준(70%) 초과 시 누수 가능성 — 3일 내 점검을 예약합니다.",
+        "전력":   "세대별 시간당 전력 소비량(kWh)입니다 ⚡\n기준(4.0 kWh) 초과 시 전기 안전 점검을 자동 예약합니다.",
+        "진동":   "건물 구조 진동 가속도(g)를 측정합니다 📳\n기준(0.5 g) 초과 시 구조팀에 긴급 점검을 요청합니다.",
+        "CO농도": "일산화탄소(CO) 농도(ppm)를 측정합니다 🌫️\n기준(10 ppm) 초과 시 환기팀 즉시 출동 + 담당자 문자 발송",
+    }
+
     def sensor_kpi(col, name, val, unit, thr, higher_bad=True):
         over = (val > thr) if higher_bad else (val < thr)
         badge = "🔴 경고" if over else "🟢 정상"
         with col:
             st.metric(f"{name} {badge}", f"{val:.1f}{unit}", delta=f"기준 {thr}{unit}",
-                      delta_color="inverse" if over else "off")
+                      delta_color="inverse" if over else "off",
+                      help=SENSOR_HELP.get(name, ""))
 
     sensor_kpi(c1, "온도",   latest["온도"],   "°C",  30)
     sensor_kpi(c2, "습도",   latest["습도"],   "%",   70)
@@ -942,7 +1051,12 @@ elif page == "📡 IoT · 디지털 트윈":
     sensor_kpi(c5, "CO농도", latest["CO_ppm"], "ppm", 10)
 
     st.divider()
-    period = st.slider("조회 기간 (일)", 1, 30, 7)
+    period = st.slider("조회 기간 (일)", 1, 30, 7,
+                       help="IoT 센서 그래프에서 볼 기간을 조절하세요 📅\n\n"
+                            "• 1일: 오늘 하루 데이터만\n"
+                            "• 7일: 최근 1주일 (기본값)\n"
+                            "• 30일: 최근 한 달 전체\n"
+                            "슬라이더를 오른쪽으로 끌수록 더 긴 기간을 봅니다.")
     cut = datetime.now() - timedelta(days=period)
     vdf = iot_df[iot_df["ts"] >= cut]
 
@@ -1025,9 +1139,15 @@ elif page == "🛡 AI 사전 예방 정비":
     col_l, col_r = st.columns([1, 1])
 
     with col_l:
-        selected_prev = st.selectbox("단지 선택", [r["단지"] for r in prevention_data])
+        selected_prev = st.selectbox("단지 선택", [r["단지"] for r in prevention_data],
+                                    help="XAI 위험도 판정 근거를 볼 단지를 선택하세요 🏘️\n"
+                                         "선택하면 아래 막대 그래프가 해당 단지의 AI 판정 이유를 보여줍니다.")
         row = next(r for r in prevention_data if r["단지"] == selected_prev)
-        st.metric("위험도 점수", f"{row['위험도 점수']}점", delta=row["등급"])
+        st.metric("위험도 점수", f"{row['위험도 점수']}점", delta=row["등급"],
+                  help="AI가 7개 예방 지표를 종합하여 산출한 위험도 점수입니다 🎯\n\n"
+                       "• 70점↑: 🔴 고위험 — 즉시 정비 필요\n"
+                       "• 40~70점: 🟡 중위험 — 주간 점검 권고\n"
+                       "• 40점↓: 🟢 정상 — 정기 모니터링 유지")
 
     raw_shap = {
         "건물 경과년수 (노후도)": random.uniform(0.20, 0.32),
@@ -1059,12 +1179,28 @@ elif page == "🛡 AI 사전 예방 정비":
     with st.form("prevention_form"):
         p1, p2 = st.columns(2)
         with p1:
-            prev_cpx = st.selectbox("단지", ALL_COMPLEXES)
-            prev_facility = st.selectbox("시설 유형", ["외벽 (드라이비트)", "배관·누수", "전기 설비", "지붕·옥상", "공용 계단·복도"])
+            prev_cpx = st.selectbox("단지", ALL_COMPLEXES,
+                                    help="예방 정비 지시서를 발행할 단지를 선택하세요 🏘️")
+            prev_facility = st.selectbox("시설 유형", ["외벽 (드라이비트)", "배관·누수", "전기 설비", "지붕·옥상", "공용 계단·복도"],
+                                         help="점검·정비할 시설 종류를 선택하세요 🔧\n\n"
+                                              "• 외벽(드라이비트): 화재취약 외장재 점검\n"
+                                              "• 배관·누수: 수도관, 천장 누수\n"
+                                              "• 전기 설비: 배전반, 전선 노후\n"
+                                              "• 지붕·옥상: 방수, 균열\n"
+                                              "• 공용 계단·복도: 균열, 낙하물 위험")
         with p2:
-            prev_priority = st.selectbox("우선순위", ["🔴 긴급 (48시간 내)", "🟡 우선 (1주 내)", "🟢 일반 (1개월 내)"])
-            prev_worker = st.text_input("담당 업체", placeholder="예) ○○유지보수")
-        gen_prev = st.form_submit_button("🛡 예방 정비 지시서 생성", type="primary", use_container_width=True)
+            prev_priority = st.selectbox("우선순위", ["🔴 긴급 (48시간 내)", "🟡 우선 (1주 내)", "🟢 일반 (1개월 내)"],
+                                         help="AI 위험도 점수에 따라 조치 기한을 정하세요 ⏱️\n\n"
+                                              "• 🔴 긴급: 70점↑ 고위험, 48시간 내 착수\n"
+                                              "• 🟡 우선: 40~70점 중위험, 1주일 내\n"
+                                              "• 🟢 일반: 40점↓ 정상, 1개월 내 처리")
+            prev_worker = st.text_input("담당 업체", placeholder="예) ○○유지보수",
+                                        help="정비를 담당할 업체 이름을 입력하세요 🏗️\n"
+                                             "입력하면 지시서에 자동으로 포함됩니다.\n"
+                                             "비워두면 '미지정'으로 표시됩니다.")
+        gen_prev = st.form_submit_button("🛡 예방 정비 지시서 생성", type="primary", use_container_width=True,
+                                         help="클릭하면 AI가 위험도를 분석하고 정비 지시서를 자동 생성합니다 📋\n"
+                                              "생성된 지시서는 TXT 저장, FMS 전송, 담당자 앱 알림으로 발송할 수 있습니다.")
 
     if gen_prev:
         with st.spinner("AI 위험도 분석 및 정비 지시서 생성 중..."):
@@ -1124,10 +1260,18 @@ elif page == "🏅 클린하우스 마일리지":
     """)
 
     m1,m2,m3,m4 = st.columns(4)
-    m1.metric("마일리지 참여세대", f"{(mileage_df['앱사용여부']=='사용').sum()}세대")
-    m2.metric("골드 등급", f"{(mileage_df['등급']=='골드').sum()}세대")
-    m3.metric("평균 마일리지", f"{mileage_df['마일리지'].mean():.0f}점")
-    m4.metric("인센티브 지급 총액", f"{mileage_df['인센티브_만원'].sum()}만원")
+    m1.metric("마일리지 참여세대", f"{(mileage_df['앱사용여부']=='사용').sum()}세대",
+              help="앱을 사용해 자발적으로 세대 점검에 참여한 가구 수입니다 📱\n"
+                   "참여할수록 마일리지가 쌓이고 관리비 할인 혜택을 받습니다.")
+    m2.metric("골드 등급", f"{(mileage_df['등급']=='골드').sum()}세대",
+              help="1,000점 이상 최우수 참여 세대입니다 🥇\n"
+                   "골드 등급은 관리비 20만원 할인 + 우선 수리 서비스 혜택을 받습니다.")
+    m3.metric("평균 마일리지", f"{mileage_df['마일리지'].mean():.0f}점",
+              help="전체 세대의 평균 마일리지 점수입니다 📊\n\n"
+                   "• 1,000점↑: 골드\n• 500~999점: 실버\n• 100~499점: 브론즈\n• 100점↓: 일반")
+    m4.metric("인센티브 지급 총액", f"{mileage_df['인센티브_만원'].sum()}만원",
+              help="이번 달 전체 참여 세대에 지급된 관리비 할인 혜택 총액입니다 💰\n"
+                   "마일리지 등급에 따라 5만~20만원이 자동으로 할인됩니다.")
 
     tab1, tab2 = st.tabs(["📋 세대별 마일리지 현황", "📊 등급별 분석"])
     with tab1:
@@ -1180,7 +1324,10 @@ elif page == "🔮 Vision 2030 예측분석":
         st.markdown('<div class="sh">⚙ 머신러닝 기반 설비 고장 예측 (AI 적용 전·후 비교)</div>', unsafe_allow_html=True)
         st.info("축적된 IoT 센서 데이터 + 점검 이력을 머신러닝으로 학습 → 향후 12개월 고장 건수 예측\n목표: AI 적용으로 고장 건수 **30% 감소**")
 
-        cpx_sel = st.selectbox("단지 선택", forecast_df["단지"].unique())
+        cpx_sel = st.selectbox("단지 선택", forecast_df["단지"].unique(),
+                              help="고장 예측 그래프를 볼 단지를 선택하세요 🏘️\n\n"
+                                   "선택하면 해당 단지의 향후 12개월 고장 예측과\n"
+                                   "'AI 적용 전'과 '적용 후'를 비교해서 볼 수 있습니다.")
         fc_cpx = forecast_df[forecast_df["단지"] == cpx_sel]
 
         fig = go.Figure()

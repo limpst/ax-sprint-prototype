@@ -63,7 +63,7 @@ data = [
     [Paragraph("페이지", ParagraphStyle("h", fontName=FONT, fontSize=11, textColor=colors.white)),
      Paragraph("Notion URL", ParagraphStyle("h", fontName=FONT, fontSize=11, textColor=colors.white))],
     [Paragraph("완성본 (3장+4장 전체)", body_style),
-     Paragraph("https://www.notion.so/cryptolifeblck/AX-3-4-33f6585be6ea80c7b9c4de02af158bc7", url_style)],
+     Paragraph("https://www.notion.so/cryptolifeblck/AX-3-4-v1-33f6585be6ea80c7b9c4de02af158bc7", url_style)],
     [Paragraph("메인 페이지 (3장·4장, Claude 생성)", body_style),
      Paragraph("https://www.notion.so/33f549e480408108acdfccb31afb9098", url_style)],
     [Paragraph("제3장. 상용화 대상 제품·서비스의 개요", body_style),
@@ -93,7 +93,7 @@ story.append(HRFlowable(width="100%", thickness=0.5, color=colors.HexColor("#ccc
 story.append(Spacer(1, 4*mm))
 
 links = [
-    ("완성본", "https://www.notion.so/cryptolifeblck/AX-3-4-33f6585be6ea80c7b9c4de02af158bc7"),
+    ("완성본", "https://www.notion.so/cryptolifeblck/AX-3-4-v1-33f6585be6ea80c7b9c4de02af158bc7"),
     ("메인", "https://www.notion.so/33f549e480408108acdfccb31afb9098"),
     ("3장", "https://www.notion.so/33f549e4804081d8a945f5d14e9c4b5f"),
     ("4장", "https://www.notion.so/33f549e4804081fa8397c76309a6277a"),

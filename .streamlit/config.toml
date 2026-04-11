@@ -1,0 +1,23 @@
+# ──────────────────────────────────────────────────────────
+#  에이톰-AX Streamlit 서버 설정 (Render/배포 전용)
+#  로컬 실행 시에도 동일하게 적용됩니다.
+# ──────────────────────────────────────────────────────────
+
+[server]
+headless            = true          # 브라우저 자동 실행 안 함 (서버 환경 필수)
+port                = 10000         # Render 기본 포트 ($PORT 환경변수로 덮어씀)
+address             = "0.0.0.0"     # 모든 IP에서 접근 허용
+enableCORS          = false         # CORS 비활성화 (Render 프록시가 처리)
+enableXsrfProtection = true         # XSRF 공격 방어 활성화
+maxUploadSize       = 50            # 파일 업로드 최대 50MB
+runOnSave           = false         # 저장 시 자동 재실행 끄기 (프로덕션)
+
+[browser]
+gatherUsageStats    = false         # Streamlit 사용 통계 수집 안 함
+
+[theme]
+primaryColor        = "#2563eb"     # 파랑 (에이톰-AX 브랜드)
+backgroundColor     = "#ffffff"
+secondaryBackgroundColor = "#f5f7ff"
+textColor           = "#1a1a2e"
+font                = "sans serif"

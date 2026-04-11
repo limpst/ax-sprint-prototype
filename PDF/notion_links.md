@@ -10,7 +10,7 @@
 
 | 페이지 | URL |
 |-------|-----|
-| **완성본 (3장+4장 전체)** | https://www.notion.so/cryptolifeblck/AX-3-4-33f6585be6ea80c7b9c4de02af158bc7 |
+| **완성본 (3장+4장 전체)** | https://www.notion.so/cryptolifeblck/AX-3-4-v1-33f6585be6ea80c7b9c4de02af158bc7 |
 | **메인 페이지** (Claude 생성, 3장·4장) | https://www.notion.so/33f549e480408108acdfccb31afb9098 |
 | **제3장.** 상용화 대상 제품·서비스의 개요 | https://www.notion.so/33f549e4804081d8a945f5d14e9c4b5f |
 | **제4장.** 추진전략 및 계획 | https://www.notion.so/33f549e4804081fa8397c76309a6277a |
@@ -19,7 +19,7 @@
 
 ## 직접 링크
 
-- 완성본: https://www.notion.so/cryptolifeblck/AX-3-4-33f6585be6ea80c7b9c4de02af158bc7
+- 완성본: https://www.notion.so/cryptolifeblck/AX-3-4-v1-33f6585be6ea80c7b9c4de02af158bc7
 - 메인: https://www.notion.so/33f549e480408108acdfccb31afb9098
 - 3장: https://www.notion.so/33f549e4804081d8a945f5d14e9c4b5f
 - 4장: https://www.notion.so/33f549e4804081fa8397c76309a6277a

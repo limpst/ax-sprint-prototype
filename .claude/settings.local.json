@@ -13,7 +13,9 @@
       "Bash(python create_v5.py)",
       "mcp__claude_ai_Notion__notion-create-pages",
       "Bash(python save_notion_links_pdf.py)",
-      "mcp__claude_ai_Notion__notion-update-page"
+      "mcp__claude_ai_Notion__notion-update-page",
+      "Bash(python -c \"import ast; ast.parse\\(open\\(''app.py'',''r'',encoding=''utf-8''\\).read\\(\\)\\); print\\(''✅ 문법 오류 없음''\\)\")",
+      "Bash(python -c \"import ast; ast.parse\\(open\\(''app.py'',''r'',encoding=''utf-8''\\).read\\(\\)\\); print\\(''OK - no syntax error''\\)\")"
     ]
   }
 }
