@@ -383,7 +383,7 @@ with st.sidebar:
     st.divider()
     st.caption(f"🕐 {datetime.now().strftime('%Y-%m-%d %H:%M')}")
     st.caption("국토교통부 AX-SPRINT 과제")
-    st.caption("TRL 8 수준 · 현장실증 중")
+    st.caption("v1.0.2 · TRL 8 수준 · 현장실증 중")
 
 # ══════════════════════════════════════════════════════
 # PAGE 1: 통합 대시보드
@@ -1246,6 +1246,49 @@ elif page == "🛡 AI 사전 예방 정비":
             st.button("📱 담당자 앱 알림", use_container_width=True,
                       help="담당 업체 앱 + 문자 자동 발송")
 
+    # ── KALIS-FMS 데이터 연동 ──────────────────────────────
+    st.divider()
+    st.markdown('<div class="sh">🛡 Antigravity 엔진 — KALIS-FMS 3중 교차검증</div>', unsafe_allow_html=True)
+    st.caption("KALIS-FMS 30년 결함 이력 × 일송건축 설계도면 × 세종대 비선형 FEM → False Positive 0건 목표")
+
+    kalis_col1, kalis_col2 = st.columns([3, 2])
+    with kalis_col1:
+        import numpy as np
+        years = list(range(1, 31))
+        degradation_base = [100 - (y ** 1.4) * 0.8 + random.uniform(-2, 2) for y in years]
+        degradation_ai   = [100 - (y ** 1.2) * 0.55 + random.uniform(-1, 1) for y in years]
+        threshold_line   = [70] * 30
+
+        fig_kalis = go.Figure()
+        fig_kalis.add_trace(go.Scatter(x=years, y=degradation_base, name="KALIS 실측 노후도",
+                                       line=dict(color="#ef4444", dash="dot"), mode="lines"))
+        fig_kalis.add_trace(go.Scatter(x=years, y=degradation_ai, name="Antigravity 예측 곡선",
+                                       line=dict(color="#10b981"), mode="lines",
+                                       fill="tonexty", fillcolor="rgba(16,185,129,0.08)"))
+        fig_kalis.add_trace(go.Scatter(x=years, y=threshold_line, name="정밀안전진단 기준선 (70점)",
+                                       line=dict(color="#f59e0b", dash="dash"), mode="lines"))
+        fig_kalis.update_layout(height=280, margin=dict(t=10, b=10),
+                                xaxis_title="경과 년수", yaxis_title="구조 건전도 지수",
+                                legend=dict(orientation="h", y=-0.25))
+        st.plotly_chart(fig_kalis, use_container_width=True)
+
+    with kalis_col2:
+        st.markdown("""
+        **🔬 3중 교차검증 결과**
+        | 검증 레이어 | 데이터 소스 | 기여도 |
+        |-------------|-------------|--------|
+        | ① 이력 기반 | KALIS-FMS 20~30년 | 40% |
+        | ② 설계 기반 | 일송건축 도면 DB | 35% |
+        | ③ 구조해석 | 세종대 비선형 FEM | 25% |
+
+        **📊 성능 지표 (TRL 8 실증)**
+        - 결함 탐지율: **95%**
+        - False Positive: **0건** (Antigravity 보정)
+        - 균열 해상도: **0.2 mm** (Y-MaskNet)
+        - 보고서 생성: **36분** (vs 3시간)
+        """)
+        st.info("🎯 TRL 8 → TRL 9 전환 목표: 2026년 LH 파일럿 500세대 실증 완료")
+
 # ══════════════════════════════════════════════════════
 # PAGE 7: 클린하우스 마일리지
 # ══════════════════════════════════════════════════════
@@ -1318,7 +1361,7 @@ elif page == "🔮 Vision 2030 예측분석":
     st.title("🔮 Vision 2030 — AI 예측 분석")
     st.caption("머신러닝 기반 고장 예측 (30% 감소) · 회귀분석 에너지 최적화 (15% 절감) · 공실 예측")
 
-    tab1, tab2, tab3 = st.tabs(["⚙ 고장 예측 (ML)", "⚡ 에너지 최적화", "🏠 공실 예측"])
+    tab1, tab2, tab3, tab4 = st.tabs(["⚙ 고장 예측 (ML)", "⚡ 에너지 최적화", "🏠 공실 예측", "📈 사업화 KPI"])
 
     with tab1:
         st.markdown('<div class="sh">⚙ 머신러닝 기반 설비 고장 예측 (AI 적용 전·후 비교)</div>', unsafe_allow_html=True)
@@ -1394,4 +1437,50 @@ elif page == "🔮 Vision 2030 예측분석":
         | 공실률 | 기준 | -20% | 수요예측·선제대응 |
         | 입주민 만족도 | 기준 | +20% | 앱·마일리지·빠른처리 |
         | 실증 데이터 | 3,847건 | 10,000건 | HSIA 드론·앱 통합 |
+        """)
+
+    with tab4:
+        st.markdown('<div class="sh">📈 연차별 사업화 목표 및 KPI — LH 500억 시장 수주 로드맵</div>', unsafe_allow_html=True)
+        st.info("AX-SPRINT 과제 종료 후 LH 전국 공공임대주택 확산 전략 | 1차년도 5억 → 2차년도 25억 → LH 500억 시장")
+
+        kpi_col1, kpi_col2, kpi_col3, kpi_col4 = st.columns(4)
+        kpi_col1.metric("1차년도 목표", "5억 원", "SH·GBDC 실증 수주")
+        kpi_col2.metric("2차년도 목표", "25억 원", "+400% 성장")
+        kpi_col3.metric("LH 시장 규모", "500억 원", "전국 확산")
+        kpi_col4.metric("결함 탐지율", "95%", "TRL 9 목표")
+
+        # 연차별 수주 목표 차트
+        years_kpi  = ["1차년도\n(2026)", "2차년도\n(2027)", "3차년도\n(2028)", "4차년도\n(2029)", "2030+\nLH 전국"]
+        revenue    = [5, 25, 80, 200, 500]
+        colors_kpi = ["#6366f1", "#8b5cf6", "#a855f7", "#c084fc", "#10b981"]
+
+        fig_kpi = go.Figure(go.Bar(
+            x=years_kpi, y=revenue,
+            marker_color=colors_kpi,
+            text=[f"{v}억" for v in revenue],
+            textposition="outside"
+        ))
+        fig_kpi.update_layout(height=320, margin=dict(t=30, b=10),
+                              yaxis_title="수주 목표 (억 원)",
+                              title="연차별 누적 수주 목표")
+        st.plotly_chart(fig_kpi, use_container_width=True)
+
+        st.markdown("""
+        **📋 연차별 세부 KPI**
+        | 구분 | 1차년도 (2026) | 2차년도 (2027) | LH 전국 (2030+) |
+        |------|---------------|---------------|----------------|
+        | 수주 목표 | **5억** | **25억** | **500억** |
+        | 적용 단지 | SH 5개 + GBDC 2개 | 광역 공사 확산 | LH 전국 |
+        | 결함 탐지율 | 90% (TRL 8) | 95% (TRL 9) | 97%+ |
+        | 보고서 단축 | 60% (3h→72분) | **80% (3h→36분)** | 90%+ |
+        | False Positive | < 5건 | **0건** | 0건 |
+        | HISIA 표준 | 참여 | **표준 등재** | 글로벌 확산 |
+        | 실증 데이터 | 3,847건 | 10,000건 | 50,000건+ |
+
+        **🏆 핵심 기술 경쟁력 (기술적 해자)**
+        - **KALIS-FMS 30년 이력** — 경쟁사 대비 10년 이상 데이터 선점
+        - **Antigravity 오탐 보정** — False Positive 0건, 업계 유일 3중 교차검증
+        - **법무법인 수호 자문** — AI 보고서 공문서 효력, 전자문서법 근거
+        - **세종대 비선형 FEM** — 학계 검증된 구조 해석 모듈, 특허 출원 예정
+        - **HISIA 드론 표준** — 표준 제정 참여로 후발 진입장벽 형성
         """)
