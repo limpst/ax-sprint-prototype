@@ -7,7 +7,10 @@
       "Bash(python3:*)",
       "Bash(unzip -q '사업계획서_4장_support.docx' -d /tmp/docx_extract)",
       "Read(//tmp/**)",
-      "Bash(unzip -p '사업계획서_4장_support.docx' word/document.xml)"
+      "Bash(unzip -p '사업계획서_4장_support.docx' word/document.xml)",
+      "mcp__claude_ai_Notion__notion-search",
+      "mcp__claude_ai_Notion__notion-fetch",
+      "Bash(python create_v5.py)"
     ]
   }
 }
