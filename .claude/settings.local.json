@@ -11,7 +11,9 @@
       "mcp__claude_ai_Notion__notion-search",
       "mcp__claude_ai_Notion__notion-fetch",
       "Bash(python create_v5.py)",
-      "mcp__claude_ai_Notion__notion-create-pages"
+      "mcp__claude_ai_Notion__notion-create-pages",
+      "Bash(python save_notion_links_pdf.py)",
+      "mcp__claude_ai_Notion__notion-update-page"
     ]
   }
 }
