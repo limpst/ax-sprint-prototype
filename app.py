@@ -353,7 +353,7 @@ with st.sidebar:
         "🤖 RPA 행정 자동화",
         "📋 AI 민원 관리",
         "📡 IoT · 디지털 트윈",
-        "📄 XAI 손해사정 보고서",
+        "🛡 AI 사전 예방 정비",
         "🏅 클린하우스 마일리지",
         "🔮 Vision 2030 예측분석",
     ], label_visibility="collapsed")
@@ -808,7 +808,7 @@ elif page == "🤖 RPA 행정 자동화":
 # ══════════════════════════════════════════════════════
 elif page == "📋 AI 민원 관리":
     st.title("📋 AI 민원 처리 워크플로우")
-    st.caption("RPA 70% 자동분류 · AI 우선순위 배정 · 담당자 자동지정 · XAI 손해산정")
+    st.caption("RPA 70% 자동분류 · AI 우선순위 배정 · 담당자 자동지정 · 예방 조치 자동 연계")
 
     tab1, tab2, tab3 = st.tabs(["📋 민원 목록 & 관리", "📱 입주민 앱 민원 접수", "📊 처리 통계"])
 
@@ -843,8 +843,8 @@ elif page == "📋 AI 민원 관리":
             ("2️⃣ AI 자동 분류 (RPA 70%)", "유형·위험도 자동 분류\nAI 신뢰도 72~97%"),
             ("3️⃣ 담당자 자동 배정 (75%)", "위험도·단지·업무량 기반\n최적 담당자 자동 지정"),
             ("4️⃣ 현장 조치", "드론/앱 재점검\n실측·보수 시행"),
-            ("5️⃣ XAI 손해 산정", "KICT 기준 책임소재 판정\n손해액 자동 산출"),
-            ("6️⃣ 분쟁 종결", "객관적 보고서 발급\n입주민 확인·서명"),
+            ("5️⃣ 예방 정비 연계", "AI 사전 예방 정비 엔진\n위험도 재평가·재발 방지"),
+            ("6️⃣ 처리 완료", "결과 보고서 발급\n입주민 앱 자동 통보"),
         ]
         cols = st.columns(6)
         for col, (title, desc) in zip(cols, steps):
@@ -971,121 +971,144 @@ elif page == "📡 IoT · 디지털 트윈":
     st.dataframe(pd.DataFrame(events), use_container_width=True, hide_index=True)
 
 # ══════════════════════════════════════════════════════
-# PAGE 6: XAI 손해사정 보고서
+# PAGE 6: AI 사전 예방 정비 엔진
 # ══════════════════════════════════════════════════════
-elif page == "📄 XAI 손해사정 보고서":
-    st.title("📄 KICT 기준 XAI 손해사정 자동 보고서")
-    st.caption("설명 가능 AI(XAI) + KICT 가이드라인 = 손해사정사 수준 객관적 보고서 · 분쟁 즉각 종결")
+elif page == "🛡 AI 사전 예방 정비":
+    st.title("🛡 AI 사전 예방 정비 엔진")
+    st.caption("손상이 사고로 번지기 전 — XAI 위험도 스코어링 · IoT 이상 감지 · 예방 정비 지시 자동 출력")
 
-    with st.form("xai_form"):
-        r1,r2 = st.columns(2)
-        with r1:
-            xai_site = st.selectbox("수요처", ["SH공사","경북개발공사"])
-            xai_cpx = st.selectbox("단지", ALL_COMPLEXES)
-            xai_unit = st.text_input("세대", placeholder="101동 302호")
-            xai_type = st.selectbox("사고 유형", list(COMPLAINT_TYPES.keys()))
-        with r2:
-            xai_date = st.date_input("사고 발생일", value=date.today())
-            xai_claim = st.number_input("입주민 청구액 (만원)", min_value=0, value=500, step=50)
-            xai_include = st.checkbox("XAI 상세 판정 근거 포함", value=True)
-            xai_kict = st.checkbox("KICT 가이드라인 기준 적용", value=True)
-        gen = st.form_submit_button("📄 AI 손해사정 보고서 생성", type="primary", use_container_width=True)
+    # KPI
+    k1, k2, k3, k4 = st.columns(4)
+    with k1:
+        st.markdown('<div class="kpi-card-red"><div class="label">고위험 경보 단지</div><div class="value">3</div><div class="sub">즉시 예방 정비 필요</div></div>', unsafe_allow_html=True)
+    with k2:
+        st.markdown('<div class="kpi-card-amber"><div class="label">중위험 모니터링</div><div class="value">11</div><div class="sub">주간 점검 권고</div></div>', unsafe_allow_html=True)
+    with k3:
+        st.markdown('<div class="kpi-card-green"><div class="label">예방 조치 완료</div><div class="value">47</div><div class="sub">이번 달 누적</div></div>', unsafe_allow_html=True)
+    with k4:
+        st.markdown('<div class="kpi-card"><div class="label">사고 전환 차단율</div><div class="value">94%</div><div class="sub">AI 조기 경보 효과</div></div>', unsafe_allow_html=True)
 
-    if gen:
-        with st.spinner("KICT 기준 AI 손해사정 분석 중 (XAI 엔진 가동)..."):
-            time.sleep(2.2)
+    st.markdown("---")
 
-        ai_amount = round(xai_claim * random.uniform(0.52, 0.83))
-        responsibility_options = [
-            "공사 책임 (시설 노후·관리 과실)",
-            "입주민 책임 (부주의·임의 개조)",
-            "공동 책임 (공사 60% : 입주민 40%)",
-            "불가항력 (자연재해 해당)",
-        ]
-        resp = random.choice(responsibility_options)
-        conf = round(random.uniform(0.84, 0.96), 2)
-        age = 2026 - int(xai_cpx.split("준공: ")[1][:4])
+    # 단지별 위험도 스코어링
+    st.markdown("### 📊 단지별 AI 위험도 스코어 (7개 예방 지표 종합)")
 
-        st.markdown("---")
+    prevention_data = []
+    for cpx in ALL_COMPLEXES[:10]:
+        age = 2026 - int(cpx.split("준공: ")[1][:4])
+        score = round(
+            age * 0.28 +
+            random.uniform(10, 30) +   # IoT 이상 누적
+            random.uniform(5, 20) +    # 손상 측정값 추이
+            random.uniform(5, 15) +    # 점검 이력 경과일
+            random.uniform(0, 10),     # 기상 데이터
+            1
+        )
+        score = min(score, 99)
+        level = "🔴 고위험" if score >= 70 else ("🟡 중위험" if score >= 40 else "🟢 정상")
+        action = "즉시 정비 지시" if score >= 70 else ("주간 점검 권고" if score >= 40 else "정기 모니터링")
+        prevention_data.append({
+            "단지": cpx[:20],
+            "경과년수": f"{age}년",
+            "위험도 점수": score,
+            "등급": level,
+            "권고 조치": action,
+        })
+
+    prev_df = pd.DataFrame(prevention_data).sort_values("위험도 점수", ascending=False).reset_index(drop=True)
+    st.dataframe(prev_df, use_container_width=True, hide_index=True)
+
+    st.markdown("---")
+
+    # XAI SHAP 기여도 — 위험도 판정 근거
+    st.markdown("### 🔍 XAI 위험도 판정 근거 (SHAP 기여도)")
+    col_l, col_r = st.columns([1, 1])
+
+    with col_l:
+        selected_prev = st.selectbox("단지 선택", [r["단지"] for r in prevention_data])
+        row = next(r for r in prevention_data if r["단지"] == selected_prev)
+        st.metric("위험도 점수", f"{row['위험도 점수']}점", delta=row["등급"])
+
+    raw_shap = {
+        "건물 경과년수 (노후도)": random.uniform(0.20, 0.32),
+        "IoT 센서 이상 감지 누적": random.uniform(0.15, 0.25),
+        "손상 측정값 추이 (균열폭 진행)": random.uniform(0.12, 0.22),
+        "마지막 정기점검 경과일": random.uniform(0.08, 0.16),
+        "기상 데이터 (강우·동결 이력)": random.uniform(0.06, 0.14),
+        "드라이비트 면적 비율": random.uniform(0.04, 0.10),
+        "동일 유형 과거 민원 빈도": random.uniform(0.03, 0.08),
+    }
+    total_shap = sum(raw_shap.values())
+    shap_norm = {k: round(v / total_shap, 3) for k, v in raw_shap.items()}
+    shap_sorted = dict(sorted(shap_norm.items(), key=lambda x: x[1], reverse=True))
+
+    fig_prev = px.bar(
+        x=list(shap_sorted.values()), y=list(shap_sorted.keys()),
+        orientation="h", height=300,
+        labels={"x": "기여도 (SHAP value)", "y": ""},
+        color=list(shap_sorted.values()), color_continuous_scale="Reds",
+        title=f"{selected_prev} — 위험도 판정 근거"
+    )
+    fig_prev.update_layout(margin=dict(t=40, b=10), coloraxis_showscale=False)
+    st.plotly_chart(fig_prev, use_container_width=True)
+
+    st.markdown("---")
+
+    # 예방 정비 지시 자동 출력
+    st.markdown("### 📋 예방 정비 지시서 자동 생성")
+    with st.form("prevention_form"):
+        p1, p2 = st.columns(2)
+        with p1:
+            prev_cpx = st.selectbox("단지", ALL_COMPLEXES)
+            prev_facility = st.selectbox("시설 유형", ["외벽 (드라이비트)", "배관·누수", "전기 설비", "지붕·옥상", "공용 계단·복도"])
+        with p2:
+            prev_priority = st.selectbox("우선순위", ["🔴 긴급 (48시간 내)", "🟡 우선 (1주 내)", "🟢 일반 (1개월 내)"])
+            prev_worker = st.text_input("담당 업체", placeholder="예) ○○유지보수")
+        gen_prev = st.form_submit_button("🛡 예방 정비 지시서 생성", type="primary", use_container_width=True)
+
+    if gen_prev:
+        with st.spinner("AI 위험도 분석 및 정비 지시서 생성 중..."):
+            time.sleep(1.5)
+        age_p = 2026 - int(prev_cpx.split("준공: ")[1][:4])
+        st.success("✅ 예방 정비 지시서가 생성되었습니다.")
         st.markdown(f"""
-## 📄 AI 손해사정 보고서
+---
+## 🛡 AI 사전 예방 정비 지시서
 > **생성일시:** {datetime.now().strftime('%Y년 %m월 %d일 %H:%M:%S')}
-> **AI 모델:** Y-MaskNet v2.1 + XAI Engine (세종대학교 개발)
-> **적용 기준:** KICT 시설물 유지관리 가이드라인 2025 + KFS 한국화재안전기준
+> **AI 모델:** XAI 위험도 스코어링 엔진 v2.0 (세종대학교 공동 개발)
 
 | 항목 | 내용 |
 |------|------|
-| 수요처 | {xai_site} |
-| 단지·세대 | {xai_cpx[:30]} / {xai_unit if xai_unit else '미입력'} |
-| 사고 유형 | {xai_type} |
-| 사고 발생일 | {xai_date} |
-| 건물 경과년수 | {age}년 |
-| 입주민 청구액 | **{xai_claim:,} 만원** |
-| **AI 산정 손해액** | **{ai_amount:,} 만원** ({round(ai_amount/xai_claim*100)}% 인정) |
-| **책임 소재 판정** | **{resp}** |
-| AI 신뢰도 | {conf*100:.0f}% |
-| 적용 기준 | KICT 가이드라인 2025 · KFS |
+| 단지 | {prev_cpx[:30]} |
+| 건물 경과년수 | {age_p}년 |
+| 대상 시설 | {prev_facility} |
+| 우선순위 | {prev_priority} |
+| 담당 업체 | {prev_worker if prev_worker else '미지정'} |
+| AI 위험도 점수 | {round(age_p * 0.28 + random.uniform(20, 50), 1)}점 |
+
+**📌 AI 권고 조치:**
+- {prev_facility} 정밀 점검 및 손상 진행 상태 확인
+- IoT 센서 이상 징후 재확인 후 임계값 재설정
+- 손상 확대 전 선제 보수 시행 → 대형 사고 원천 차단
+- 조치 완료 후 드론 재스캔 결과 FMS 업로드
         """)
-
-        if xai_include:
-            st.markdown("### 🔍 XAI 판정 근거 (설명 가능 AI — SHAP 값 기반)")
-            raw_factors = {
-                f"건물 경과년수 ({age}년 노후)": random.uniform(0.20, 0.32),
-                "최근 2년 동일 유형 사고 이력": random.uniform(0.12, 0.25),
-                "IoT 센서 이상 감지 누적 횟수": random.uniform(0.10, 0.20),
-                "AI 손상 탐지 면적·폭 측정값": random.uniform(0.12, 0.22),
-                "마지막 정기점검 경과일수": random.uniform(0.08, 0.16),
-                "입주민 거주 기간": random.uniform(0.04, 0.10),
-                "동일 세대 과거 민원 빈도": random.uniform(0.03, 0.10),
-            }
-            total = sum(raw_factors.values())
-            factors = {k: round(v/total, 3) for k,v in raw_factors.items()}
-            sorted_f = dict(sorted(factors.items(), key=lambda x: x[1], reverse=True))
-
-            fig_xai = px.bar(
-                x=list(sorted_f.values()), y=list(sorted_f.keys()),
-                orientation="h", height=320,
-                labels={"x":"기여도 (SHAP value)","y":""},
-                color=list(sorted_f.values()), color_continuous_scale="Blues",
-                title="판정 근거별 기여도"
-            )
-            fig_xai.update_layout(margin=dict(t=40,b=10), coloraxis_showscale=False)
-            st.plotly_chart(fig_xai, use_container_width=True)
-
-            top3 = list(sorted_f.keys())[:3]
-            st.markdown(f"""
-**📋 주요 판정 근거 TOP3:**
-1. **{top3[0]}** — 기여도 {sorted_f[top3[0]]*100:.1f}%
-2. **{top3[1]}** — 기여도 {sorted_f[top3[1]]*100:.1f}%
-3. **{top3[2]}** — 기여도 {sorted_f[top3[2]]*100:.1f}%
-
-**📌 결론:**
-→ {resp}으로 판정.
-→ 입주민 청구액 **{xai_claim:,}만원** 중 AI 객관 산정 **{ai_amount:,}만원** 인정.
-→ 예상 처리 기간: **즉시 ~ 2주 이내** (기존 평균 **8개월** 대비 대폭 단축).
-→ 본 보고서는 KICT 표준 기준에 따라 작성되었으며 법적 효력 자료로 활용 가능합니다.
-            """)
-
-        col_dl1, col_dl2, col_dl3 = st.columns(3)
-        with col_dl1:
-            report_text = f"""AI 손해사정 보고서
-단지: {xai_cpx[:30]}
-사고유형: {xai_type}
-청구액: {xai_claim}만원
-AI산정손해액: {ai_amount}만원
-책임소재: {resp}
-AI신뢰도: {conf*100:.0f}%
-생성일시: {datetime.now().strftime('%Y-%m-%d %H:%M')}
-적용기준: KICT 가이드라인 2025"""
-            st.download_button("⬇️ 보고서 저장 (.txt)", data=report_text.encode("utf-8"),
-                               file_name=f"XAI_report_{datetime.now().strftime('%Y%m%d_%H%M')}.txt",
+        col_a1, col_a2, col_a3 = st.columns(3)
+        with col_a1:
+            inst_text = f"""AI 사전 예방 정비 지시서
+단지: {prev_cpx[:30]}
+시설: {prev_facility}
+우선순위: {prev_priority}
+담당: {prev_worker if prev_worker else '미지정'}
+생성일: {datetime.now().strftime('%Y-%m-%d %H:%M')}"""
+            st.download_button("⬇️ 지시서 저장 (.txt)", data=inst_text.encode("utf-8"),
+                               file_name=f"prevention_{datetime.now().strftime('%Y%m%d_%H%M')}.txt",
                                mime="text/plain", use_container_width=True)
-        with col_dl2:
-            st.button("📤 SH FMS 자동 전송", use_container_width=True,
-                      help="실제 운영 시 SH공사 FMS에 자동 연동")
-        with col_dl3:
-            st.button("✉️ 입주민 결과 통보", use_container_width=True,
-                      help="입주민 앱 + 문자 자동 발송")
+        with col_a2:
+            st.button("📤 FMS 자동 전송", use_container_width=True,
+                      help="SH공사 / 경북개발공사 FMS 자동 연동")
+        with col_a3:
+            st.button("📱 담당자 앱 알림", use_container_width=True,
+                      help="담당 업체 앱 + 문자 자동 발송")
 
 # ══════════════════════════════════════════════════════
 # PAGE 7: 클린하우스 마일리지
