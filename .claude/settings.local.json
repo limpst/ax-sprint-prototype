@@ -18,7 +18,9 @@
       "Bash(python -c \"import ast; ast.parse\\(open\\(''app.py'',''r'',encoding=''utf-8''\\).read\\(\\)\\); print\\(''OK - no syntax error''\\)\")",
       "mcp__claude_ai_Notion__notion-duplicate-page",
       "Bash(chcp 65001)",
-      "Bash(ls -la /c/Users/on/PycharmProjects/PythonProject3/PDF*)"
+      "Bash(ls -la /c/Users/on/PycharmProjects/PythonProject3/PDF*)",
+      "Bash(python:*)",
+      "Bash(python create_v103_report.py)"
     ]
   }
 }

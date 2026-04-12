@@ -1581,21 +1581,130 @@ elif page == "🧬 AI 데이터 파이프라인":
     > 사업계획서 4장 '추진 전략 및 계획'의 기술적 근거 자료입니다.
     """)
 
-    # ── 파이프라인 흐름도 ──
+    # ── 파이프라인 흐름도 (Plotly 시각화) ──
     st.markdown('<div class="sh">🔄 AI 데이터 처리 6단계 파이프라인</div>', unsafe_allow_html=True)
-    st.markdown("""
-    ```
-    ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐
-    │ ① RAW    │───▶│ ② 학습   │───▶│ ③ AI     │───▶│ ④ 분석   │───▶│ ⑤ 현장   │───▶│ ⑥ 기대   │
-    │   데이터  │    │   데이터  │    │   모델   │    │   결과   │    │   활용   │    │   효과   │
-    │          │    │          │    │          │    │          │    │          │    │          │
-    │ 드론이미지│    │ 라벨링   │    │ Y-MaskNet│    │ 균열탐지 │    │ 긴급보수 │    │ 사고차단 │
-    │ IoT센서  │    │ 전처리   │    │ LSTM     │    │ 이상감지 │    │ 자동배정 │    │ 비용절감 │
-    │ 민원텍스트│    │ 피처추출 │    │ XGBoost  │    │ 위험예측 │    │ 보고서   │    │ 시간단축 │
-    │ BIM도면  │    │ 증강     │    │ LLM+RAG  │    │ 자동분류 │    │ FMS전송  │    │ 만족도↑  │
-    └──────────┘    └──────────┘    └──────────┘    └──────────┘    └──────────┘    └──────────┘
-    ```
-    """)
+
+    fig_pipe = go.Figure()
+
+    # 단계 정의
+    stages = [
+        {"num": "①", "title": "RAW 데이터", "color": "#6366f1",
+         "items": ["드론 4K 이미지", "IoT 센서 시계열", "민원 텍스트/사진", "BIM·LiDAR 3D", "GPR·InSAR"],
+         "icon": "📥", "count": "10종"},
+        {"num": "②", "title": "학습 데이터", "color": "#8b5cf6",
+         "items": ["COCO 라벨링", "이상/정상 태깅", "NER·감성 라벨", "시계열 윈도우", "증강·전처리"],
+         "icon": "🏷", "count": "55건"},
+        {"num": "③", "title": "AI 모델", "color": "#0ea5e9",
+         "items": ["Y-MaskNet (F1=0.97)", "LSTM·ARIMA", "XGBoost·LightGBM", "KoBERT·LLM+RAG", "PINN·PointNet++"],
+         "icon": "🧠", "count": "25종+"},
+        {"num": "④", "title": "분석 결과", "color": "#14b8a6",
+         "items": ["균열 0.2mm 탐지", "이상징후 경보", "위험도 스코어링", "자동 분류·예측", "구조 시뮬레이션"],
+         "icon": "📊", "count": "실시간"},
+        {"num": "⑤", "title": "현장 활용", "color": "#f59e0b",
+         "items": ["긴급 보수 지시", "담당자 자동 배정", "FMS 자동 전송", "보고서 자동 생성", "대피·소방 연계"],
+         "icon": "🏗", "count": "자동화"},
+        {"num": "⑥", "title": "기대 효과", "color": "#10b981",
+         "items": ["대형사고 0건", "비용 70% 절감", "처리시간 80%↓", "만족도 20%↑", "ROI 340%"],
+         "icon": "🎯", "count": "검증완료"},
+    ]
+
+    box_w, box_h = 1.4, 1.0
+    gap = 0.55
+    y_center = 0.5
+    total_w = len(stages) * box_w + (len(stages) - 1) * gap
+
+    for i, s in enumerate(stages):
+        x = i * (box_w + gap)
+
+        # 박스 배경 (라운드 사각형 시뮬레이션)
+        fig_pipe.add_shape(
+            type="rect", x0=x, y0=y_center - box_h/2, x1=x + box_w, y1=y_center + box_h/2,
+            fillcolor=s["color"], opacity=0.12, line=dict(color=s["color"], width=2.5),
+            layer="below"
+        )
+
+        # 상단 번호 + 제목 배지
+        fig_pipe.add_shape(
+            type="rect",
+            x0=x + 0.05, y0=y_center + box_h/2 - 0.22,
+            x1=x + box_w - 0.05, y1=y_center + box_h/2 - 0.02,
+            fillcolor=s["color"], opacity=0.85, line=dict(width=0),
+            layer="below"
+        )
+        fig_pipe.add_annotation(
+            x=x + box_w/2, y=y_center + box_h/2 - 0.12,
+            text=f"<b>{s['icon']} {s['num']} {s['title']}</b>",
+            font=dict(size=12, color="white", family="Arial"),
+            showarrow=False
+        )
+
+        # 건수 배지
+        fig_pipe.add_annotation(
+            x=x + box_w/2, y=y_center + box_h/2 + 0.08,
+            text=f"<b>{s['count']}</b>",
+            font=dict(size=9, color=s["color"], family="Arial"),
+            showarrow=False,
+            bgcolor="white", bordercolor=s["color"], borderwidth=1, borderpad=2
+        )
+
+        # 항목 리스트
+        items_text = "<br>".join([f"• {item}" for item in s["items"]])
+        fig_pipe.add_annotation(
+            x=x + box_w/2, y=y_center - 0.12,
+            text=f"<span style='font-size:10px;color:#374151;'>{items_text}</span>",
+            font=dict(size=10, color="#374151", family="Arial"),
+            showarrow=False, align="left"
+        )
+
+        # 화살표 (단계 간 연결)
+        if i < len(stages) - 1:
+            ax_start = x + box_w + 0.03
+            ax_end = (i + 1) * (box_w + gap) - 0.03
+            fig_pipe.add_annotation(
+                x=ax_end, y=y_center + 0.15,
+                ax=ax_start, ay=y_center + 0.15,
+                xref="x", yref="y", axref="x", ayref="y",
+                showarrow=True,
+                arrowhead=3, arrowsize=1.2, arrowwidth=2.5,
+                arrowcolor="#94a3b8"
+            )
+
+    # MLOps 피드백 루프 (하단 곡선 화살표)
+    loop_y = y_center - box_h/2 - 0.18
+    fig_pipe.add_shape(
+        type="line",
+        x0=5 * (box_w + gap) + box_w/2, y0=y_center - box_h/2,
+        x1=5 * (box_w + gap) + box_w/2, y1=loop_y,
+        line=dict(color="#ef4444", width=2, dash="dot")
+    )
+    fig_pipe.add_shape(
+        type="line",
+        x0=5 * (box_w + gap) + box_w/2, y0=loop_y,
+        x1=box_w/2, y1=loop_y,
+        line=dict(color="#ef4444", width=2, dash="dot")
+    )
+    fig_pipe.add_annotation(
+        x=box_w/2, y=loop_y,
+        ax=box_w/2 + 0.3, ay=loop_y,
+        xref="x", yref="y", axref="x", ayref="y",
+        showarrow=True, arrowhead=3, arrowsize=1.2, arrowwidth=2,
+        arrowcolor="#ef4444"
+    )
+    fig_pipe.add_annotation(
+        x=total_w / 2, y=loop_y - 0.07,
+        text="<b>🔄 MLOps 피드백 루프 — 결과 → 재학습 → 모델 지속 개선</b>",
+        font=dict(size=10, color="#ef4444", family="Arial"),
+        showarrow=False, bgcolor="rgba(239,68,68,0.08)", borderpad=3
+    )
+
+    fig_pipe.update_layout(
+        height=380, margin=dict(t=10, b=30, l=10, r=10),
+        xaxis=dict(visible=False, range=[-0.3, total_w + 0.3]),
+        yaxis=dict(visible=False, range=[loop_y - 0.18, y_center + box_h/2 + 0.22]),
+        plot_bgcolor="white", paper_bgcolor="white",
+        showlegend=False
+    )
+    st.plotly_chart(fig_pipe, use_container_width=True)
 
     # ── KPI 요약 ──
     pk1, pk2, pk3, pk4, pk5 = st.columns(5)
