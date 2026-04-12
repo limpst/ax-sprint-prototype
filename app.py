@@ -589,13 +589,13 @@ if page == "📊 통합 대시보드":
 # ══════════════════════════════════════════════════════
 elif page == "✈ 비전AI · 드론 정밀진단":
     st.title("✈ 멀티모달 드론 & 비전AI 정밀진단")
-    st.caption("Y-MaskNet / Mask R-CNN 인스턴스 세그멘테이션 | 균열·누수·드라이비트 화재취약 탐지")
+    st.caption("Y-MaskNet / Mask R-CNN 인스턴스 세그멘테이션 | 균열·누수·드라이비트 화재취약 탐지 | Antigravity 3중 교차검증")
 
     tab1, tab2, tab3 = st.tabs(["🖼 AI 이미지 분석", "📊 탐지 결과 현황", "🗺 세움터·FMS 연동 현황"])
 
     with tab1:
         st.markdown("##### 이미지 업로드 또는 샘플 선택 후 AI 분석 실행")
-        col_l, col_r = st.columns([1, 1])
+        col_l, col_r = st.columns([1, 1.2])
         with col_l:
             upload_type = st.radio("입력 방식", ["📱 앱 업로드 (입주민)", "✈ 드론 스캔 (HSIA)"],
                                    horizontal=True,
@@ -626,88 +626,148 @@ elif page == "✈ 비전AI · 드론 정밀진단":
 
         with col_r:
             if run_btn:
-                with st.spinner("Y-MaskNet (Mask R-CNN) 추론 중..."):
-                    time.sleep(1.8)
+                # ── 프로그레스 바 + 단계별 추론 ──
+                progress_bar = st.progress(0, text="Y-MaskNet 모델 로딩...")
+                time.sleep(0.4)
+                progress_bar.progress(20, text="이미지 전처리 (512x512 패치 분할)...")
+                time.sleep(0.3)
+                progress_bar.progress(45, text="Mask R-CNN (ResNet-101) 추론 중...")
+                time.sleep(0.5)
+                progress_bar.progress(70, text="Antigravity 오탐 보정 엔진 검증...")
+                time.sleep(0.3)
+                progress_bar.progress(90, text="KALIS-FMS 이력 교차검증...")
+                time.sleep(0.2)
+                progress_bar.progress(100, text="분석 완료")
+                time.sleep(0.2)
+                progress_bar.empty()
 
                 # 시나리오별 결과
                 scenarios = {
-                    "①": {"유형":"수직균열","폭":0.35,"위험":"고","신뢰":0.94,
+                    "①": {"유형":"수직균열","폭":0.35,"길이":42,"위험":"고","신뢰":0.94,
                            "기준":"0.2mm 초과","색":"#dc2626","조치":"구조전문가 즉시 현장 점검",
-                           "draw":"crack_v"},
-                    "②": {"유형":"누수흔적","폭":0.12,"위험":"중","신뢰":0.88,
-                           "기준":"습윤면적 200cm²","색":"#3b82f6","조치":"30일내 방수 보수",
-                           "draw":"leak"},
-                    "③": {"유형":"드라이비트 화재취약","폭":0.0,"위험":"고","신뢰":0.91,
+                           "draw":"crack_v","antigravity":"PASS","fp_check":"오탐 아님 (이력 일치)",
+                           "kalis_score":44.6,"fem_result":"응력 집중 확인","성장률":0.07,
+                           "shap":{"경과년수":0.30,"IoT진동":0.20,"균열폭":0.18,"습도":0.12,"이력건수":0.10,"외기온":0.06,"기타":0.04}},
+                    "②": {"유형":"누수흔적","폭":0.0,"길이":0,"위험":"중","신뢰":0.88,
+                           "기준":"습윤면적 200cm² 초과","색":"#3b82f6","조치":"30일내 방수 보수",
+                           "draw":"leak","antigravity":"PASS","fp_check":"오탐 아님 (습도 IoT 일치)",
+                           "kalis_score":52.3,"fem_result":"구조 영향 없음","성장률":0.0,
+                           "shap":{"습도":0.28,"배관노후":0.22,"강우량":0.18,"경과년수":0.14,"균열이력":0.08,"온도차":0.06,"기타":0.04}},
+                    "③": {"유형":"드라이비트 화재취약","폭":0.0,"길이":850,"위험":"고","신뢰":0.91,
                            "기준":"KFS 화재안전기준","색":"#f97316","조치":"즉시 난연재 교체 또는 방화도료 처리",
-                           "draw":"dryvit"},
-                    "④": {"유형":"옥상 박리손상","폭":2.10,"위험":"고","신뢰":0.89,
+                           "draw":"dryvit","antigravity":"PASS","fp_check":"오탐 아님 (도면 일치)",
+                           "kalis_score":38.1,"fem_result":"화재 시 3층 확산 3분","성장률":0.0,
+                           "shap":{"외벽재질":0.35,"면적":0.20,"층수":0.15,"인접거리":0.12,"소방설비":0.08,"통풍":0.06,"기타":0.04}},
+                    "④": {"유형":"옥상 박리손상","폭":2.10,"길이":0,"위험":"고","신뢰":0.89,
                            "기준":"0.5mm 초과","색":"#9333ea","조치":"우레탄 방수 긴급 시공",
-                           "draw":"peel"},
-                    "⑤": {"유형":"수평균열","폭":0.08,"위험":"저","신뢰":0.79,
+                           "draw":"peel","antigravity":"PASS","fp_check":"오탐 아님 (방수이력 일치)",
+                           "kalis_score":41.7,"fem_result":"방수층 내구연한 초과","성장률":0.12,
+                           "shap":{"경과년수":0.25,"방수노후":0.22,"동결해동":0.18,"강우량":0.15,"자외선":0.10,"시공품질":0.06,"기타":0.04}},
+                    "⑤": {"유형":"수평균열","폭":0.08,"길이":15,"위험":"저","신뢰":0.79,
                            "기준":"0.2mm 미만","색":"#16a34a","조치":"정기점검 주기 유지",
-                           "draw":"crack_h"},
+                           "draw":"crack_h","antigravity":"PASS (기준 미만)","fp_check":"오탐 보정 완료 (미세균열)",
+                           "kalis_score":72.8,"fem_result":"구조 안전","성장률":0.01,
+                           "shap":{"경과년수":0.22,"온도차":0.20,"습도":0.18,"진동":0.15,"하중변화":0.12,"풍압":0.08,"기타":0.05}},
                 }
                 key = sample[0]
                 sc = scenarios[key]
 
-                # 가상 이미지 생성
-                img = Image.new("RGB", (500, 360), (195, 188, 178))
-                draw = ImageDraw.Draw(img)
-                # 벽면 텍스처
-                for x in range(0, 500, 50):
-                    draw.line([(x,0),(x,360)], fill=(175,168,158), width=1)
-                for y in range(0, 360, 35):
-                    draw.line([(0,y),(500,y)], fill=(175,168,158), width=1)
+                # ── 고화질 가상 이미지 생성 ──
+                W_IMG, H_IMG = 600, 420
+                img = Image.new("RGB", (W_IMG, H_IMG), (195, 188, 178))
+                draw_img = ImageDraw.Draw(img)
+
+                # 콘크리트 텍스처 (랜덤 노이즈 + 그리드)
+                rng = random.Random(42)
+                for px_x in range(0, W_IMG, 3):
+                    for px_y in range(0, H_IMG, 3):
+                        noise = rng.randint(-12, 12)
+                        base = 188 + noise
+                        draw_img.rectangle([px_x, px_y, px_x+2, px_y+2], fill=(base, base-5, base-10))
+                # 벽돌 줄눈
+                for gx in range(0, W_IMG, 60):
+                    draw_img.line([(gx,0),(gx,H_IMG)], fill=(170,163,153), width=1)
+                for gy in range(0, H_IMG, 40):
+                    draw_img.line([(0,gy),(W_IMG,gy)], fill=(170,163,153), width=1)
 
                 if sc["draw"] == "crack_v":
-                    pts = [(210,50),(215,150),(205,250),(220,340)]
-                    for i in range(len(pts)-1):
-                        draw.line([pts[i], pts[i+1]], fill=(40,30,20), width=4)
-                    draw.rectangle([185,40,245,350], outline="#dc2626", width=3)
-                    draw.text((187,25), f"수직균열 {sc['폭']}mm [{int(sc['신뢰']*100)}%]", fill="#dc2626")
+                    # 정교한 수직균열: 베지어 느낌의 불규칙 곡선 + 분기
+                    pts_main = [(255,30),(260,80),(252,130),(258,180),(248,230),(255,280),(245,330),(252,390)]
+                    for i in range(len(pts_main)-1):
+                        draw_img.line([pts_main[i], pts_main[i+1]], fill=(35,25,18), width=5)
+                        draw_img.line([(pts_main[i][0]-1,pts_main[i][1]),(pts_main[i+1][0]-1,pts_main[i+1][1])], fill=(50,40,30), width=2)
+                    # 미세 분기
+                    draw_img.line([(252,130),(235,155)], fill=(60,50,40), width=2)
+                    draw_img.line([(258,230),(275,250)], fill=(60,50,40), width=2)
+                    # 바운딩 박스 + 세그멘테이션 마스크 반투명
+                    draw_img.rectangle([220,20,290,400], outline="#dc2626", width=3)
+                    # 신뢰도 라벨 배경
+                    draw_img.rectangle([222,2,445,22], fill="#dc2626")
+                    draw_img.text((226,4), f"CRACK_V 0.35mm | conf:{sc['신뢰']:.2f}", fill="white")
+                    # 스케일바
+                    draw_img.rectangle([430,350,435,400], fill="#dc2626")
+                    draw_img.text((440,368), "10mm", fill="#dc2626")
                 elif sc["draw"] == "leak":
-                    draw.ellipse([100,90,350,260], fill=(130,155,175,200), outline="#3b82f6", width=3)
-                    draw.text((102,75), f"누수흔적 [{int(sc['신뢰']*100)}%]", fill="#3b82f6")
+                    # 누수: 동심원 패턴 + 물 흐른 자국
+                    for r in range(120, 20, -15):
+                        alpha_val = 130 + (120-r)
+                        c = min(alpha_val, 180)
+                        draw_img.ellipse([300-r,210-r*0.7,300+r,210+r*0.7], fill=(c,c+15,c+30), outline=None)
+                    # 물 흐름선
+                    for trail in range(5):
+                        tx = 280 + trail * 12
+                        draw_img.line([(tx,260),(tx+rng.randint(-5,5),350)], fill=(140,160,180), width=2)
+                    draw_img.rectangle([165,125,435,305], outline="#3b82f6", width=3)
+                    draw_img.rectangle([167,107,410,127], fill="#3b82f6")
+                    draw_img.text((171,109), f"LEAK | area:312cm² | conf:{sc['신뢰']:.2f}", fill="white")
                 elif sc["draw"] == "dryvit":
-                    for y in range(0,360,30):
-                        draw.rectangle([0,y,500,y+28], fill=(210,190,160), outline=(180,160,130))
-                    draw.rectangle([10,10,490,350], outline="#f97316", width=4)
-                    draw.text((12,355), f"드라이비트 화재취약 [{int(sc['신뢰']*100)}%]", fill="#f97316")
+                    # 드라이비트: 가연성 외장재 패턴
+                    for y in range(0, H_IMG, 35):
+                        shade = rng.randint(195,215)
+                        draw_img.rectangle([0,y,W_IMG,y+33], fill=(shade, shade-15, shade-35), outline=(180,160,130))
+                    # 화재 위험 표시 (열화상 오버레이 시뮬레이션)
+                    for hx in range(50, W_IMG-50, 8):
+                        for hy in range(50, H_IMG-50, 8):
+                            heat = rng.randint(180,255)
+                            draw_img.rectangle([hx,hy,hx+6,hy+6], fill=(heat, heat//2, heat//4))
+                    draw_img.rectangle([15,15,W_IMG-15,H_IMG-15], outline="#f97316", width=4)
+                    draw_img.rectangle([17,0,500,20], fill="#f97316")
+                    draw_img.text((21,2), f"DRYVIT_FIRE_RISK | 850cm | conf:{sc['신뢰']:.2f}", fill="white")
                 elif sc["draw"] == "peel":
-                    for i in range(8):
-                        x,y = random.randint(50,450), random.randint(50,310)
-                        r = random.randint(15,45)
-                        draw.ellipse([x-r,y-r,x+r,y+r], fill=(155,145,135), outline="#9333ea", width=2)
-                    draw.rectangle([30,30,470,330], outline="#9333ea", width=3)
-                    draw.text((32,15), f"박리손상 {sc['폭']}mm [{int(sc['신뢰']*100)}%]", fill="#9333ea")
-                else:
-                    draw.line([(80,180),(420,185)], fill=(40,30,20), width=3)
-                    draw.rectangle([70,165,430,200], outline="#16a34a", width=3)
-                    draw.text((72,150), f"수평균열 {sc['폭']}mm [{int(sc['신뢰']*100)}%]", fill="#16a34a")
+                    # 박리: 여러 크기의 불규칙 손상
+                    for i in range(12):
+                        cx, cy = rng.randint(80,520), rng.randint(60,360)
+                        rx, ry = rng.randint(12,50), rng.randint(10,40)
+                        draw_img.ellipse([cx-rx,cy-ry,cx+rx,cy+ry], fill=(160,152,142), outline="#9333ea", width=2)
+                        if rx > 30:
+                            draw_img.text((cx-15,cy-6), f"{rng.uniform(0.5,2.5):.1f}mm", fill="#9333ea")
+                    draw_img.rectangle([40,30,560,395], outline="#9333ea", width=3)
+                    draw_img.rectangle([42,12,460,32], fill="#9333ea")
+                    draw_img.text((46,14), f"PEEL | depth:2.1mm | area:95cm² | conf:{sc['신뢰']:.2f}", fill="white")
+                else:  # crack_h
+                    pts_h = [(60,205),(130,208),(200,203),(280,210),(360,206),(440,212),(530,208)]
+                    for i in range(len(pts_h)-1):
+                        draw_img.line([pts_h[i], pts_h[i+1]], fill=(55,45,35), width=3)
+                    draw_img.rectangle([50,188,545,228], outline="#16a34a", width=2)
+                    draw_img.rectangle([52,170,420,190], fill="#16a34a")
+                    draw_img.text((56,172), f"CRACK_H 0.08mm (기준미만) | conf:{sc['신뢰']:.2f}", fill="white")
 
                 buf = io.BytesIO()
                 img.save(buf, "PNG")
-                st.image(buf.getvalue(), caption="AI 세그멘테이션 오버레이 결과", use_container_width=True)
+                st.image(buf.getvalue(), caption="AI 세그멘테이션 오버레이 결과 (Y-MaskNet v2.1)", use_container_width=True)
 
-                # 결과 메트릭
-                r1,r2,r3,r4 = st.columns(4)
+                # ── 탐지 결과 메트릭 (향상) ──
+                r1,r2,r3,r4,r5 = st.columns(5)
                 r1.metric("탐지 유형", sc["유형"],
-                          help="AI가 이미지에서 탐지한 손상의 종류입니다 🔍\n"
-                               "균열·누수·드라이비트·박리 4가지 유형을 자동 구분합니다.")
+                          help="AI가 이미지에서 탐지한 손상의 종류입니다 🔍")
                 r2.metric("AI 신뢰도", f"{int(sc['신뢰']*100)}%",
-                          help="AI 탐지 결과에 대한 신뢰도(확신도)입니다 🎯\n"
-                               "• 90%↑: 매우 신뢰할 수 있는 결과\n"
-                               "• 70~90%: 신뢰 가능, 현장 확인 권장\n"
-                               "• 70%↓: 재촬영 또는 전문가 확인 필요")
+                          help="Y-MaskNet 탐지 신뢰도 (Confidence Score)")
                 r3.metric("위험도", f"{'🔴' if sc['위험']=='고' else '🟡' if sc['위험']=='중' else '🟢'} {sc['위험']}",
-                          help="AI가 탐지 결과를 기반으로 판정한 위험도입니다 🚦\n\n"
-                               "• 🔴 고: 기준치 초과, 즉시 전문가 점검 필요\n"
-                               "• 🟡 중: 30일 내 보수 권고\n"
-                               "• 🟢 저: 정기점검 수준, 모니터링 유지")
+                          help="🔴 고: 즉시 점검 | 🟡 중: 30일 이내 | 🟢 저: 정기점검")
                 r4.metric("손상폭", f"{sc['폭']} mm" if sc['폭'] > 0 else "면적 분석",
-                          help="균열의 경우 폭(mm)을 정량 측정합니다 📏\n"
-                               "기준: 0.2mm 초과 시 고위험 판정\n"
-                               "누수·드라이비트는 면적(cm²)으로 분석합니다.")
+                          help="균열폭(mm) 정량 측정 | 기준: 0.2mm")
+                r5.metric("Antigravity", sc["antigravity"].split("(")[0].strip(),
+                          help="KALIS-FMS 이력 + 설계도면 + FEM 3중 교차검증 결과")
 
                 # 위험도별 알림
                 if sc["위험"] == "고":
@@ -717,93 +777,330 @@ elif page == "✈ 비전AI · 드론 정밀진단":
                 else:
                     st.success(f"✅ **저위험** | 판정기준: {sc['기준']} | 권장조치: **{sc['조치']}**")
 
-                # 자동 작업지시서
-                with st.expander("📋 자동 생성 작업지시서 (Work Order)"):
-                    wo = pd.DataFrame({
-                        "항목": ["단지","탐지방법","손상유형","위험도","판정기준","권장조치","조치기한","담당팀","AI모델","분석일시"],
-                        "내용": [selected_cpx[:25], upload_type, sc["유형"], sc["위험"],
-                                 sc["기준"], sc["조치"],
-                                 "즉시" if sc["위험"]=="고" else "30일 이내" if sc["위험"]=="중" else "정기점검",
-                                 "시설관리 1팀", "Y-MaskNet v2.1 (세종대학교 개발)",
-                                 datetime.now().strftime("%Y-%m-%d %H:%M:%S")]
+                # ── 상세 분석 패널 (3열) ──
+                st.divider()
+                det_col1, det_col2, det_col3 = st.columns(3)
+
+                with det_col1:
+                    st.markdown("**🔬 Antigravity 3중 교차검증**")
+                    ag_data = pd.DataFrame({
+                        "검증 레이어": ["① KALIS-FMS 이력", "② 일송건축 설계도면", "③ 세종대 비선형 FEM"],
+                        "결과": [sc["fp_check"], f"건전도 {sc['kalis_score']}점", sc["fem_result"]],
+                        "상태": ["PASS", "PASS", "PASS"]
                     })
-                    st.table(wo)
+                    st.dataframe(ag_data, use_container_width=True, hide_index=True, height=142)
+                    st.caption(f"False Positive 판정: **{sc['antigravity']}**")
+
+                with det_col2:
+                    st.markdown("**📊 XAI SHAP 기여도 분석**")
+                    shap_items = list(sc["shap"].items())
+                    shap_df = pd.DataFrame(shap_items, columns=["요소","기여도"])
+                    shap_df = shap_df.sort_values("기여도", ascending=True)
+                    colors_shap = ["#ef4444" if v > 0.20 else "#f59e0b" if v > 0.10 else "#6b7280" for v in shap_df["기여도"]]
+                    fig_shap = go.Figure(go.Bar(
+                        x=shap_df["기여도"], y=shap_df["요소"],
+                        orientation="h", marker_color=colors_shap,
+                        text=[f"{v:.0%}" for v in shap_df["기여도"]],
+                        textposition="outside"
+                    ))
+                    fig_shap.update_layout(height=200, margin=dict(t=5,b=5,l=5,r=30),
+                                           xaxis=dict(tickformat=".0%", range=[0, 0.42]),
+                                           yaxis=dict(tickfont=dict(size=10)))
+                    st.plotly_chart(fig_shap, use_container_width=True)
+
+                with det_col3:
+                    st.markdown("**📈 AI 신뢰도 분해**")
+                    conf_val = sc["신뢰"]
+                    fig_gauge = go.Figure(go.Indicator(
+                        mode="gauge+number+delta",
+                        value=conf_val * 100,
+                        delta={"reference": 85, "suffix": "%", "increasing": {"color": "#10b981"}},
+                        number={"suffix": "%", "font": {"size": 36}},
+                        gauge={
+                            "axis": {"range": [0, 100], "tickwidth": 1},
+                            "bar": {"color": sc["색"]},
+                            "bgcolor": "white",
+                            "steps": [
+                                {"range": [0, 50], "color": "#fee2e2"},
+                                {"range": [50, 70], "color": "#fef3c7"},
+                                {"range": [70, 85], "color": "#dbeafe"},
+                                {"range": [85, 100], "color": "#d1fae5"}
+                            ],
+                            "threshold": {"line": {"color": "#1e293b", "width": 3}, "thickness": 0.8, "value": 85}
+                        }
+                    ))
+                    fig_gauge.update_layout(height=180, margin=dict(t=20,b=5,l=20,r=20))
+                    st.plotly_chart(fig_gauge, use_container_width=True)
+                    st.caption("기준선 85% | 임계치 초과 시 자동 조치 발행")
+
+                # ── 균열 성장 예측 (해당 시) ──
+                if sc["성장률"] > 0:
+                    st.divider()
+                    st.markdown("**📉 균열 성장 예측 (LSTM 시계열 모델)**")
+                    growth_col1, growth_col2 = st.columns([2, 1])
+                    with growth_col1:
+                        months_past = list(range(-5, 0))
+                        months_future = list(range(0, 7))
+                        current = sc["폭"]
+                        past_vals = [max(0.02, current - sc["성장률"] * abs(m) + rng.uniform(-0.01, 0.01)) for m in months_past]
+                        future_vals = [current + sc["성장률"] * m + rng.uniform(-0.005, 0.005) for m in months_future]
+                        upper = [v * 1.15 for v in future_vals]
+                        lower = [v * 0.85 for v in future_vals]
+
+                        fig_growth = go.Figure()
+                        fig_growth.add_trace(go.Scatter(x=months_past, y=past_vals, name="실측치",
+                                                        mode="lines+markers", line=dict(color="#6366f1", width=2),
+                                                        marker=dict(size=6)))
+                        fig_growth.add_trace(go.Scatter(x=months_future, y=future_vals, name="AI 예측",
+                                                        mode="lines+markers", line=dict(color="#ef4444", width=2, dash="dash"),
+                                                        marker=dict(size=6, symbol="diamond")))
+                        # 신뢰구간
+                        fig_growth.add_trace(go.Scatter(
+                            x=months_future + months_future[::-1],
+                            y=upper + lower[::-1],
+                            fill="toself", fillcolor="rgba(239,68,68,0.1)",
+                            line=dict(color="rgba(255,255,255,0)"), name="95% 신뢰구간"
+                        ))
+                        # 위험 기준선
+                        fig_growth.add_hline(y=0.2, line_dash="dot", line_color="#f59e0b",
+                                             annotation_text="주의 기준 (0.2mm)", annotation_position="top left")
+                        if sc["폭"] > 0.2:
+                            fig_growth.add_hline(y=0.5, line_dash="dot", line_color="#dc2626",
+                                                 annotation_text="긴급 기준 (0.5mm)", annotation_position="top left")
+                        fig_growth.update_layout(
+                            height=250, margin=dict(t=10,b=10),
+                            xaxis_title="경과 월수 (0 = 현재)", yaxis_title="균열폭 (mm)",
+                            legend=dict(orientation="h", y=-0.25)
+                        )
+                        st.plotly_chart(fig_growth, use_container_width=True)
+                    with growth_col2:
+                        st.markdown(f"""
+                        **예측 요약**
+                        - 현재 균열폭: **{sc['폭']}mm**
+                        - 월 성장률: **{sc['성장률']}mm/월**
+                        - 3개월 후: **{sc['폭'] + sc['성장률']*3:.2f}mm**
+                        - 6개월 후: **{sc['폭'] + sc['성장률']*6:.2f}mm**
+                        - 위험 도달: **{max(1, int((0.5 - sc['폭']) / sc['성장률'])) if sc['성장률'] > 0 and sc['폭'] < 0.5 else '이미 초과'}개월 후**
+
+                        **KALIS 건전도**: {sc['kalis_score']}점
+                        **FEM 해석**: {sc['fem_result']}
+                        """)
+
+                # ── 자동 작업지시서 (확장) ──
+                with st.expander("📋 자동 생성 작업지시서 (Work Order) + AI 보고서"):
+                    wo_col1, wo_col2 = st.columns([1,1])
+                    with wo_col1:
+                        wo = pd.DataFrame({
+                            "항목": ["작업지시 번호","단지","동·층·위치","탐지방법","손상유형","측정값",
+                                     "위험도","판정기준","Antigravity 검증","KALIS 건전도"],
+                            "내용": [f"WO-{datetime.now().strftime('%Y%m%d')}-{rng.randint(1000,9999)}",
+                                     selected_cpx[:25], f"{rng.choice(['A','B','C'])}동 {rng.randint(1,15)}층 {'외벽 북측' if '드론' in upload_type else '실내'}",
+                                     upload_type, sc["유형"], f"{sc['폭']}mm, 길이 {sc['길이']}cm" if sc['폭'] > 0 else f"면적 분석",
+                                     sc["위험"], sc["기준"], sc["antigravity"], f"{sc['kalis_score']}점"]
+                        })
+                        st.table(wo)
+                    with wo_col2:
+                        wo2 = pd.DataFrame({
+                            "항목": ["권장조치","조치기한","담당팀","담당자","AI모델","FEM 해석",
+                                     "법적 근거","보고서 형식","생성일시","승인 상태"],
+                            "내용": [sc["조치"],
+                                     "즉시" if sc["위험"]=="고" else "30일 이내" if sc["위험"]=="중" else "정기점검",
+                                     "시설관리 1팀", "자동 배정 예정",
+                                     "Y-MaskNet v2.1 + Antigravity v1.0",
+                                     sc["fem_result"],
+                                     "시설물안전법 제11조, 전자문서법 제4조",
+                                     "법무법인 수호 자문 형식",
+                                     datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                     "AI 자동 생성 (검토 대기)"]
+                        })
+                        st.table(wo2)
+                    # 보고서 다운로드
+                    report_txt = f"""═══ AI 자동 분석 보고서 ═══
+작성일시: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+AI 모델: Y-MaskNet v2.1 + Antigravity 3중 교차검증
+
+■ 탐지 결과
+- 손상유형: {sc['유형']}
+- 측정값: {sc['폭']}mm / 길이 {sc['길이']}cm
+- 신뢰도: {sc['신뢰']*100:.0f}%
+- 위험도: {sc['위험']}
+
+■ Antigravity 검증
+- KALIS-FMS 이력: {sc['fp_check']}
+- 구조 건전도: {sc['kalis_score']}점
+- FEM 해석: {sc['fem_result']}
+- False Positive: {sc['antigravity']}
+
+■ 권장조치
+- {sc['조치']}
+- 조치기한: {'즉시' if sc['위험']=='고' else '30일 이내' if sc['위험']=='중' else '정기점검'}
+- 법적 근거: 시설물안전법 제11조
+
+■ XAI SHAP 기여도
+{chr(10).join([f'  - {k}: {v:.0%}' for k, v in sc['shap'].items()])}
+
+※ 본 보고서는 법무법인 수호 자문 형식에 따라 자동 생성되었습니다.
+"""
+                    st.download_button("📥 AI 보고서 다운로드 (.txt)", report_txt,
+                                       file_name=f"AI_Report_{datetime.now().strftime('%Y%m%d_%H%M')}.txt",
+                                       mime="text/plain", use_container_width=True)
 
             else:
+                # 분석 전 안내 (향상)
                 st.info("👈 좌측에서 시나리오를 선택하고 **Y-MaskNet 분석 실행** 버튼을 클릭하세요.")
                 st.markdown("""
-                **지원 탐지 항목:**
-                - 🔴 수직·수평 균열 (폭 0.2mm ~ 2.0mm 정량 측정)
-                - 🔵 누수흔적·습윤면적
-                - 🟠 드라이비트(가연성 외벽재) 화재취약 구조
-                - 🟣 박리·박락·표면손상
+                **지원 탐지 항목 (Y-MaskNet v2.1):**
+                | 손상 유형 | 정량 측정 | AI 성능 | 탐지 기준 |
+                |----------|----------|---------|----------|
+                | 🔴 수직·수평 균열 | 폭 0.05~2.0mm | F1=0.97 | 0.2mm 초과 시 고위험 |
+                | 🔵 누수흔적 | 면적 cm² | IoU=0.91 | 200cm² 초과 시 중위험 |
+                | 🟠 드라이비트 화재취약 | 길이 cm | Acc=0.93 | KFS 화재안전기준 |
+                | 🟣 박리·박락 | 깊이+면적 | mAP=0.89 | 0.5mm 초과 시 고위험 |
+                | 🟤 열화상 단열불량 | 열손실 % | Acc=0.87 | 15%↑ 시 보강 |
 
-                **탐지 기준:** KICT 시설물 유지관리 가이드라인 + KFS 한국화재안전기준
+                **Antigravity 3중 교차검증:**
+                ① KALIS-FMS 30년 결함 이력 → ② 일송건축 설계도면 → ③ 세종대 비선형 FEM
+                → **False Positive 0건 목표**
                 """)
 
     with tab2:
-        st.markdown('<div class="sh">📋 전체 AI 탐지 결과 목록</div>', unsafe_allow_html=True)
-        risk_f = st.multiselect("위험도 필터", ["고","중","저"], default=["고","중","저"], key="dmg_risk",
-                               help="표시할 위험도 등급을 선택하세요 🔍\n\n"
-                                    "• 🔴 고: 즉시 조치 필요 (균열 0.2mm↑ 등)\n"
-                                    "• 🟡 중: 30일 내 보수 권고\n"
-                                    "• 🟢 저: 정기점검 수준, 당장 위험 없음")
-        disp = damage_df[damage_df["위험도"].isin(risk_f)].copy()
-        icon = {"고":"🔴","중":"🟡","저":"🟢"}
-        disp["위험도"] = disp["위험도"].map(lambda r: f"{icon.get(r,'')} {r}")
-        st.dataframe(disp, use_container_width=True, hide_index=True, height=280)
+        st.markdown('<div class="sh">📋 전체 AI 탐지 결과 현황</div>', unsafe_allow_html=True)
 
-        col_a, col_b = st.columns(2)
-        with col_a:
-            st.markdown("**손상 유형별 건수**")
+        # ── KPI 요약 행 ──
+        total_det = len(damage_df)
+        high_cnt = (damage_df["위험도"]=="고").sum()
+        mid_cnt = (damage_df["위험도"]=="중").sum()
+        low_cnt = (damage_df["위험도"]=="저").sum()
+        tk1,tk2,tk3,tk4,tk5 = st.columns(5)
+        tk1.metric("총 탐지 건수", f"{total_det}건", help="AI가 탐지한 전체 손상 건수")
+        tk2.metric("고위험", f"{high_cnt}건", f"{high_cnt/total_det*100:.0f}%", delta_color="inverse",
+                   help="즉시 조치 필요")
+        tk3.metric("중위험", f"{mid_cnt}건", f"{mid_cnt/total_det*100:.0f}%",
+                   help="30일 내 보수 권고")
+        tk4.metric("저위험", f"{low_cnt}건", f"{low_cnt/total_det*100:.0f}%",
+                   help="정기점검 수준")
+        tk5.metric("False Positive", "0건", "Antigravity 보정", help="3중 교차검증 후 오탐 0건")
+
+        st.divider()
+
+        # ── 필터링 + 테이블 ──
+        filt_col1, filt_col2 = st.columns([1,3])
+        with filt_col1:
+            risk_f = st.multiselect("위험도 필터", ["고","중","저"], default=["고","중","저"], key="dmg_risk",
+                                   help="표시할 위험도 등급을 선택하세요")
+        disp = damage_df[damage_df["위험도"].isin(risk_f)].copy()
+        icon_map = {"고":"🔴","중":"🟡","저":"🟢"}
+        disp["위험도"] = disp["위험도"].map(lambda r: f"{icon_map.get(r,'')} {r}")
+        st.dataframe(disp, use_container_width=True, hide_index=True, height=250)
+
+        # ── 4분할 시각화 ──
+        viz_row1_c1, viz_row1_c2 = st.columns(2)
+        with viz_row1_c1:
+            st.markdown("**손상 유형별 건수 + 심각도**")
             vc = damage_df["유형"].value_counts().reset_index()
             vc.columns = ["유형","건수"]
-            fig = px.bar(vc, x="건수", y="유형", orientation="h", height=220,
-                         color="건수", color_continuous_scale="Reds")
-            fig.update_layout(margin=dict(t=5,b=5), coloraxis_showscale=False)
-            st.plotly_chart(fig, use_container_width=True)
-        with col_b:
+            fig_type = px.bar(vc, x="건수", y="유형", orientation="h", height=250,
+                              color="건수", color_continuous_scale=["#fecaca","#dc2626"],
+                              text="건수")
+            fig_type.update_layout(margin=dict(t=5,b=5), coloraxis_showscale=False)
+            fig_type.update_traces(textposition="outside")
+            st.plotly_chart(fig_type, use_container_width=True)
+
+        with viz_row1_c2:
             st.markdown("**위험도 × 탐지방법 분포**")
             ct = damage_df.groupby(["탐지방법","위험도"]).size().reset_index(name="건수")
-            fig2 = px.bar(ct, x="탐지방법", y="건수", color="위험도",
-                          color_discrete_map={"고":"#dc2626","중":"#d97706","저":"#16a34a"},
-                          height=220, barmode="group")
-            fig2.update_layout(margin=dict(t=5,b=5))
-            st.plotly_chart(fig2, use_container_width=True)
+            fig_method = px.bar(ct, x="탐지방법", y="건수", color="위험도",
+                                color_discrete_map={"고":"#dc2626","중":"#f59e0b","저":"#10b981"},
+                                height=250, barmode="stack", text="건수")
+            fig_method.update_layout(margin=dict(t=5,b=5), legend=dict(orientation="h", y=-0.2))
+            fig_method.update_traces(textposition="inside")
+            st.plotly_chart(fig_method, use_container_width=True)
+
+        viz_row2_c1, viz_row2_c2 = st.columns(2)
+        with viz_row2_c1:
+            st.markdown("**위험도 분포 (도넛)**")
+            risk_dist = damage_df["위험도"].value_counts().reset_index()
+            risk_dist.columns = ["위험도","건수"]
+            fig_donut = px.pie(risk_dist, values="건수", names="위험도", hole=0.5, height=260,
+                               color="위험도",
+                               color_discrete_map={"고":"#dc2626","중":"#f59e0b","저":"#10b981"})
+            fig_donut.update_traces(textposition="inside", textinfo="percent+label+value")
+            fig_donut.update_layout(margin=dict(t=10,b=10), showlegend=False,
+                                    annotations=[dict(text=f"<b>{total_det}건</b>", x=0.5, y=0.5,
+                                                      font_size=18, showarrow=False)])
+            st.plotly_chart(fig_donut, use_container_width=True)
+
+        with viz_row2_c2:
+            st.markdown("**단지별 AI 탐지 건수 히트맵**")
+            # 단지별 유형별 crosstab
+            if "단지" in damage_df.columns:
+                heat_data = damage_df.groupby(["단지","유형"]).size().unstack(fill_value=0)
+            else:
+                heat_data = damage_df.groupby(["위험도","유형"]).size().unstack(fill_value=0)
+            fig_heat = px.imshow(heat_data.values,
+                                 x=list(heat_data.columns),
+                                 y=[str(r)[:12] for r in heat_data.index],
+                                 color_continuous_scale="YlOrRd",
+                                 height=260, text_auto=True)
+            fig_heat.update_layout(margin=dict(t=10,b=10), coloraxis_showscale=False)
+            st.plotly_chart(fig_heat, use_container_width=True)
 
     with tab3:
         st.markdown('<div class="sh">🗺 세움터(건축물 도면) × FMS(시설물정보) 연동 현황</div>', unsafe_allow_html=True)
+
+        # ── 연동 상태 KPI ──
+        fms_ok = (facility_df["FMS연동"]=="완료").sum()
+        seum_ok = (facility_df["세움터연동"]=="완료").sum()
+        total_fac = len(facility_df)
+        fk1, fk2, fk3, fk4 = st.columns(4)
+        fk1.metric("전체 단지", f"{total_fac}개", help="관리 대상 단지 수")
+        fk2.metric("FMS 연동 완료", f"{fms_ok}/{total_fac}", f"{fms_ok/total_fac*100:.0f}%")
+        fk3.metric("세움터 연동 완료", f"{seum_ok}/{total_fac}", f"{seum_ok/total_fac*100:.0f}%")
+        fk4.metric("Digital Twin 준비", f"{min(fms_ok,seum_ok)}/{total_fac}",
+                   help="FMS + 세움터 모두 연동 완료된 단지")
+
         st.dataframe(facility_df[["단지","준공년도","경과년수","세대수","외벽재질",
                                    "방수공법","노후도점수","FMS연동","세움터연동","마지막드론점검"]],
                      use_container_width=True, hide_index=True)
-        st.markdown("""
-        > **디지털 트윈 구축 현황:** 세움터(도면) + FMS(시설물정보) + 드론 스캔 데이터를
-        > 융합하여 건물별 3D 노후도 모델을 자동 생성합니다.
-        > 연동 완료 단지는 건물 전체 수명주기 예측이 가능합니다.
-        """)
 
-        # 노후도 게이지
-        age_fig = go.Figure()
-        for _, row in facility_df.iterrows():
-            age_fig.add_trace(go.Indicator(
-                mode="gauge+number",
-                value=row["노후도점수"],
-                title={"text": row["단지"][:10], "font": {"size": 9}},
-                gauge={"axis": {"range": [0,100]},
-                       "bar": {"color": "#2563eb" if row["노후도점수"] > 60 else "#dc2626"},
-                       "steps": [{"range":[0,40],"color":"#fee2e2"},
-                                  {"range":[40,70],"color":"#fef3c7"},
-                                  {"range":[70,100],"color":"#d1fae5"}]},
-                domain={}
+        st.divider()
+        fac_col1, fac_col2 = st.columns(2)
+
+        with fac_col1:
+            st.markdown("**단지별 구조 건전도 (노후도 점수)**")
+            fac_sorted = facility_df.sort_values("노후도점수", ascending=True)
+            colors_fac = ["#dc2626" if v < 40 else "#f59e0b" if v < 60 else "#10b981" for v in fac_sorted["노후도점수"]]
+            fig_age = go.Figure(go.Bar(
+                x=fac_sorted["노후도점수"], y=[n[:14] for n in fac_sorted["단지"]],
+                orientation="h", marker_color=colors_fac,
+                text=[f"{v:.1f}점" for v in fac_sorted["노후도점수"]],
+                textposition="outside"
             ))
-        # 단순 바 차트로 대체 (게이지 다중은 복잡)
-        fig_age = px.bar(facility_df, x="단지", y="노후도점수",
-                         color="노후도점수", color_continuous_scale="RdYlGn",
-                         height=300, text="노후도점수")
-        fig_age.update_layout(margin=dict(t=10,b=10), coloraxis_showscale=True,
-                               xaxis_tickangle=-30)
-        fig_age.update_traces(texttemplate="%{text:.1f}", textposition="outside")
-        st.plotly_chart(fig_age, use_container_width=True)
+            # 기준선
+            fig_age.add_vline(x=40, line_dash="dot", line_color="#dc2626",
+                              annotation_text="위험 (40점)", annotation_position="top")
+            fig_age.add_vline(x=60, line_dash="dot", line_color="#f59e0b",
+                              annotation_text="주의 (60점)", annotation_position="top")
+            fig_age.update_layout(height=300, margin=dict(t=30,b=10,l=10,r=50),
+                                   xaxis=dict(range=[0,110], title="건전도 점수"))
+            st.plotly_chart(fig_age, use_container_width=True)
+
+        with fac_col2:
+            st.markdown("**경과년수 vs 노후도 (회귀분석)**")
+            fig_scatter = px.scatter(facility_df, x="경과년수", y="노후도점수",
+                                     size="세대수", color="노후도점수",
+                                     color_continuous_scale="RdYlGn",
+                                     hover_name="단지", height=300,
+                                     trendline="ols",
+                                     labels={"경과년수":"경과 년수","노후도점수":"건전도 점수"})
+            fig_scatter.update_layout(margin=dict(t=10,b=10), coloraxis_showscale=False)
+            st.plotly_chart(fig_scatter, use_container_width=True)
+
+        st.info("""
+        **디지털 트윈 구축 현황:** 세움터(도면) + FMS(시설물정보) + 드론 스캔 데이터를
+        융합하여 건물별 3D 노후도 모델을 자동 생성합니다.
+        연동 완료 단지는 Antigravity 3중 교차검증 + 수명주기 예측이 가능합니다.
+        """)
 
 # ══════════════════════════════════════════════════════
 # PAGE 3: RPA 행정 자동화
