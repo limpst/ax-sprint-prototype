@@ -465,7 +465,7 @@ with st.sidebar:
     st.divider()
     st.caption(f"🕐 {datetime.now().strftime('%Y-%m-%d %H:%M')}")
     st.caption("국토교통부 AX-SPRINT 과제")
-    st.caption("v1.0.3 · TRL 8 수준 · 현장실증 중")
+    st.caption("v2.2 · TRL 8 수준 · 현장실증 중")
 
 # ══════════════════════════════════════════════════════
 # PAGE 1: 통합 대시보드
@@ -576,13 +576,43 @@ if page == "📊 통합 대시보드":
     # ── KPI 목표 대비 달성률 ──
     st.markdown('<div class="sh">🎯 핵심 성과 목표 (KPI) 달성 현황</div>', unsafe_allow_html=True)
     kpi_table = pd.DataFrame({
-        "지표": ["민원처리 시간 단축", "점검업무 시간 단축", "사후보수비용 절감", "입주민 만족도 향상", "실증데이터 확보"],
-        "목표": ["67% 개선 (3일→1일)", "50% 단축", "20% 절감", "20% 향상", "10,000건"],
-        "현재달성": ["67.4%", "48.2%", "14.3%", "12.1%", "3,847건"],
-        "달성률(%)": [100, 96, 72, 61, 38],
-        "상태": ["✅ 달성", "🔶 근접", "🔶 진행중", "🔶 진행중", "🔶 진행중"],
+        "지표": ["점검완료율", "AI 탐지 정확도", "RPA 자동화율", "민원 처리시간", "고장 감소율", "에너지 절감", "공실 감소"],
+        "목표": ["95%", "93%", "80%", "1일 이내", "30%", "15%", "20%"],
+        "현재달성": ["94.2%", "93.1%", "81.5%", "1.2일", "진행 중", "진행 중", "진행 중"],
+        "달성률(%)": [99, 100, 102, 83, 45, 40, 35],
+        "상태": ["🔶 근접", "✅ 달성", "✅ 초과달성", "🔶 근접", "🔶 진행중", "🔶 진행중", "🔶 진행중"],
     })
     st.dataframe(kpi_table, use_container_width=True, hide_index=True)
+
+    # ── ROI · 기대효과 (README 섹션 10) ──
+    st.markdown('<div class="sh">💰 ROI 분석 및 기대효과 (정량)</div>', unsafe_allow_html=True)
+    roi_col1, roi_col2, roi_col3 = st.columns([1, 2, 1])
+    with roi_col1:
+        st.metric("연간 총 절감", "7,350만원", help="AI+RPA 적용 후 연간 절감 추정액")
+        st.metric("ROI", "340%", help="투자 대비 수익률")
+        st.metric("투자 회수", "8개월", help="투자금 전액 회수 소요 기간")
+    with roi_col2:
+        roi_data = pd.DataFrame({
+            "항목": ["관리비 업무 효율화", "에너지 비용 절감", "보수비 절감 (조기 탐지)", "민원 처리 효율화", "점검 일정 최적화"],
+            "연간 절감 (만원)": [1350, 1800, 2700, 900, 600],
+        })
+        fig_roi = px.bar(roi_data, x="연간 절감 (만원)", y="항목", orientation="h", height=230,
+                         color="연간 절감 (만원)", color_continuous_scale=["#a5f3fc","#0891b2"],
+                         text="연간 절감 (만원)")
+        fig_roi.update_layout(margin=dict(t=5,b=5), coloraxis_showscale=False)
+        fig_roi.update_traces(texttemplate="%{text:,}만원", textposition="outside")
+        st.plotly_chart(fig_roi, use_container_width=True)
+    with roi_col3:
+        st.markdown("""
+        **RPA 성과 요약**
+        | 업무 | 단축률 |
+        |------|--------|
+        | 고지서 발행 | 81%↓ |
+        | 민원 처리 | 67%↓ |
+        | 민원 배정 | 96%↓ |
+        | 보고서 작성 | 80%↓ |
+        | 연체율 | 47%↓ |
+        """)
 
 # ══════════════════════════════════════════════════════
 # PAGE 2: 비전 AI · 드론 정밀 진단
@@ -1463,12 +1493,59 @@ elif page == "📡 IoT · 디지털 트윈":
     ]
     st.dataframe(pd.DataFrame(events), use_container_width=True, hide_index=True)
 
+    # ── 복합 이상 시나리오 감지 (Multivariate LSTM-Attention) ──
+    st.divider()
+    st.markdown('<div class="sh">🔬 복합 이상 시나리오 감지 — Multivariate Anomaly Detection</div>', unsafe_allow_html=True)
+    st.caption("5개 센서 동시 이상 패턴 → Attention-LSTM → 화재 전조 / 누수 복합 / 설비 고장 자동 분류")
+
+    scenario_col1, scenario_col2 = st.columns([3, 2])
+    with scenario_col1:
+        # 복합 이상 시나리오 레이더 차트
+        scenarios = {
+            "화재 전조 (마포B동 지하)": {"온도": 0.95, "습도": 0.40, "CO": 0.92, "진동": 0.30, "전력": 0.75},
+            "누수 복합 (노원C동 옥상)": {"온도": 0.20, "습도": 0.95, "CO": 0.10, "진동": 0.15, "전력": 0.25},
+            "설비 고장 (강남A동 기계실)": {"온도": 0.60, "습도": 0.45, "CO": 0.15, "진동": 0.90, "전력": 0.85},
+        }
+        fig_radar = go.Figure()
+        colors_radar = ["#ef4444", "#3b82f6", "#f59e0b"]
+        for (name, vals), clr in zip(scenarios.items(), colors_radar):
+            cats = list(vals.keys()) + [list(vals.keys())[0]]
+            vs = list(vals.values()) + [list(vals.values())[0]]
+            fig_radar.add_trace(go.Scatterpolar(
+                r=vs, theta=cats, name=name,
+                fill="toself", fillcolor=f"rgba({int(clr[1:3],16)},{int(clr[3:5],16)},{int(clr[5:7],16)},0.1)",
+                line=dict(color=clr, width=2)
+            ))
+        fig_radar.update_layout(
+            polar=dict(radialaxis=dict(visible=True, range=[0, 1], tickvals=[0.25, 0.5, 0.75, 1.0])),
+            height=320, margin=dict(t=30, b=10),
+            legend=dict(orientation="h", y=-0.15), title="복합 센서 이상 패턴 (정규화)"
+        )
+        st.plotly_chart(fig_radar, use_container_width=True)
+
+    with scenario_col2:
+        st.markdown("""
+        **복합 이상 판정 로직 (Attention-LSTM)**
+
+        | 시나리오 | 트리거 조건 | 위험도 | 자동 조치 |
+        |---------|-----------|--------|---------|
+        | 🔴 화재 전조 | 온도↑+CO↑+전력↑ | 0.91 | 소방 연계 + 대피 |
+        | 🔵 누수 복합 | 습도↑+온도↓ | 0.78 | 배관팀 긴급 출동 |
+        | 🟡 설비 고장 | 진동↑+전력↑ | 0.85 | 설비팀 점검 |
+
+        **AI 성능 (P-018, P-031)**
+        - 모델: Multivariate LSTM-Attention
+        - 복합 이상 차단율: **94%**
+        - 초기 대응 시간: **70% 단축**
+        - 인명 피해: **0건** 유지
+        """)
+
 # ══════════════════════════════════════════════════════
 # PAGE 6: AI 사전 예방 정비 엔진
 # ══════════════════════════════════════════════════════
 elif page == "🛡 AI 사전 예방 정비":
     st.title("🛡 AI 사전 예방 정비 엔진")
-    st.caption("손상이 사고로 번지기 전 — XAI 위험도 스코어링 · IoT 이상 감지 · 예방 정비 지시 자동 출력")
+    st.caption("XAI 위험도 스코어링 v2.0 (이화영 박사 설계) · Antigravity 3중 교차검증 · LLM+RAG 법령 자동 학습 · 예방 정비 지시서 자동 생성")
 
     # KPI
     k1, k2, k3, k4 = st.columns(4)

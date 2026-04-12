@@ -6,6 +6,7 @@
 > **위탁:** (사)첨단기술안전점검협회(HSIA) | **자문:** 한국건설기술연구원(KICT) × 법무법인 수호
 > **수요처:** 서울주택도시공사(SH) × 경상북도개발공사
 > **버전:** v2.0 (2026-04) | **TRL 8** 수준 현장실증 프로토타입
+> **라이브 데모:** https://ax-sprint-prototype.onrender.com/
 
 ---
 
@@ -77,6 +78,7 @@ SH 서울주택도시공사 및 경상북도개발공사가 관리하는 공공�
 | **데이터 처리** | Pandas | 2.2.3 | DataFrame 기반 데이터 조작·집계·필터링 |
 | **수치 계산** | NumPy | 1.26.4 | 시뮬레이션 데이터 생성, 통계 연산 |
 | **이미지 처리** | Pillow | 11.1.0 | AI 탐지 결과 시뮬레이션 이미지 생성 |
+| **머신러닝** | scikit-learn | 1.8.0 | 9개 AI 파이프라인 모델 학습·추론 (RF, GBM, IF, GBR, LR, PCA 등) |
 | **런타임** | Python | 3.11.9 | 실행 환경 |
 
 ### 2.2 의존성 설치
@@ -92,6 +94,7 @@ plotly==5.24.1
 pandas==2.2.3
 numpy==1.26.4
 Pillow==11.1.0
+scikit-learn==1.8.0
 ```
 
 ---
@@ -100,9 +103,10 @@ Pillow==11.1.0
 
 ```
 PythonProject3/
-├── app.py                    # 메인 애플리케이션 (2,165줄, 9개 페이지 전체 구현)
+├── app.py                    # 메인 애플리케이션 (2,044줄, 9개 페이지 전체 구현)
+├── ai_pipeline.py            # AI 파이프라인 엔진 (743줄, 9개 모델 학습·추론, scikit-learn)
 ├── main.py                   # 실행 진입점 (streamlit run app.py 래퍼)
-├── requirements.txt          # Python 의존성 패키지 (5개, 버전 고정)
+├── requirements.txt          # Python 의존성 패키지 (6개, 버전 고정)
 ├── render.yaml               # Render.com 클라우드 배포 Blueprint
 ├── README.md                 # 기술 보고서 (본 문서)
 ├── .streamlit/
@@ -110,6 +114,7 @@ PythonProject3/
 ├── PDF/                      # 사업계획서 관련 문서
 │   ├── create_v5.py          # V5 사업계획서 생성 스크립트
 │   ├── create_v5_final.py    # V5 최종본 생성 스크립트
+│   ├── create_v103_report.py # v1.0.3 기술보고서 Word 생성
 │   ├── save_notion_links_pdf.py  # Notion 링크 PDF 저장
 │   └── 사업계획서_4장_support.docx
 └── PDF_NEW/                  # 사업계획서 프레임워크 문서
@@ -140,7 +145,7 @@ PythonProject3/
 │  │  ├── PAGE 6: AI 사전 예방 정비      (Line 1468~1670)        │  │
 │  │  ├── PAGE 7: 클린하우스 마일리지     (Line 1673~1735)        │  │
 │  │  ├── PAGE 8: Vision 2030 예측분석   (Line 1738~1866)        │  │
-│  │  └── PAGE 9: AI 데이터 파이프라인    (Line 1869~2165)        │  │
+│  │  └── PAGE 9: AI 데이터 파이프라인    (Line 1869~2044)        │  │
 │  └───────────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -449,18 +454,33 @@ ML 기반 중장기 예측 분석 (고장·에너지·공실)을 제공한다.
 
 ---
 
-### PAGE 9: AI 데이터 파이프라인 (Line 1869~2165)
+### PAGE 9: AI 데이터 파이프라인 — 실제 모델 학습·추론 엔진
 
 **경로:** `🧬 AI 데이터 파이프라인`
+**엔진:** `ai_pipeline.py` → `AXPipelineEngine` 클래스 (scikit-learn 기반)
 
-55개 AI 학습 데이터셋의 End-to-End 파이프라인 명세를 제공한다.
+55개 AI 학습 데이터셋의 End-to-End 파이프라인 명세 + **9개 파이프라인 실제 Mock 데이터 생성 및 모델 학습·추론·평가**를 제공한다.
 
-**핵심 기능:**
-- 6단계 파이프라인 흐름도: RAW → 학습 → 모델 → 결과 → 활용 → 효과
-- KPI 5개: 55개 파이프라인, 25+ AI 모델, 10종 데이터 소스, 100% 현장 적용, ROI 340%
-- 9개 카테고리별 필터링 및 상세 보기
-- 카테고리별 분포 차트 (Bar + Pie)
-- 적용 AI 모델 현황 표
+**실제 구현된 9개 AI 파이프라인:**
+
+| 파이프라인 | Mock 데이터 | sklearn 모델 | 핵심 성능 |
+|-----------|-----------|-------------|----------|
+| 🖼 비전AI 손상 분류 | 500건 (8피처) | RandomForest 7종 분류 | Acc 63%, F1 0.59 |
+| 📡 IoT 이상 탐지 | 720건 (5센서) | IsolationForest + RF | Acc 100%, 76건 탐지 |
+| 📋 민원 자동 분류 | 500건 (10피처) | GradientBoosting 7종 | Acc 99%, F1 0.99 |
+| 🔰 XAI 위험도 스코어링 | 300건 (7지표) | GBC 분류 + GBR 회귀 | Acc 93%, R² 0.93 |
+| ⚙ 고장 예측 | 144건 (시계열) | GBR 시계열 회귀 | R² 0.79, 감소율 24% |
+| ⚡ 에너지 최적화 | 365건 (365일) | GBR 에너지 예측 | R² 0.62, 절감 14% |
+| 🤖 관리비 이상탐지 | 1,000건 | IsolationForest + LR | 이상 Acc 99.5% |
+| 🛡 균열 성장 예측 | 600건 (50균열×12월) | GBR 성장 + RF 활성 | 성장 R² 0.90 |
+| 🏗 지반침하 예측 | 400건 (다변량) | GBC 침하 분류 | Acc 75%, F1 0.80 |
+
+**PAGE 구성 (3탭):**
+- **📂 Mock 데이터:** 생성된 데이터 테이블 + 기술 통계
+- **🤖 모델 학습 결과:** 성능 메트릭 + Feature Importance + Confusion Matrix
+- **📈 시각화:** 파이프라인별 맞춤 차트 (시계열, 산점도, 히스토그램 등)
+
+하단에 55개 파이프라인 전체 명세 (RAW→학습→모델→결과→활용→효과) 테이블 유지
 
 ---
 
@@ -650,6 +670,8 @@ streamlit run app.py
 
 ### 11.2 Render 클라우드 배포
 
+**라이브 URL:** https://ax-sprint-prototype.onrender.com/
+
 `render.yaml` Blueprint 설정:
 - **서비스 타입:** Web (HTTP)
 - **런타임:** Python 3.11.9
@@ -701,8 +723,9 @@ streamlit run app.py
 
 | 버전 | 날짜 | 주요 변경 사항 |
 |------|------|---------------|
-| **v2.1** | 2026-04-12 | README 기술 보고서 전면 재작성 (682→711줄), app.py 2,165줄 반영, Notion v1.0.3 AI 파이프라인 55건 반영, 이화영 박사 AI TD 추가, LLM & RAG 아키텍처 추가, KALIS-FMS 연동·세움터 구조 지능화·남대문교회 테스트베드 추가, 법무법인 수호 법률 자문 추가, 전 PAGE 라인 번호 정밀 갱신 |
-| **v2.0** | 2026-04 | 9번째 페이지 "AI 데이터 파이프라인" 신규 추가 (55개 학습데이터셋 명세), `make_ai_pipeline_samples()` 함수 추가 (P-001~P-055), 카테고리별 필터링·상세보기·차트 구현, AI 모델 현황 표 추가, Render.com 배포 Blueprint 추가, `requirements.txt` 5개 패키지 버전 고정 |
+| **v2.2** | 2026-04-12 | **AI 파이프라인 실제 모델 구현:** `ai_pipeline.py` 신설 (AXPipelineEngine 클래스, 9개 파이프라인 Mock 데이터 생성+scikit-learn 모델 학습·추론), PAGE 9 전면 교체 (3탭: Mock 데이터/모델 학습 결과/시각화), `scikit-learn==1.8.0` 추가, 라이브 데모 URL 추가 (https://ax-sprint-prototype.onrender.com/) |
+| **v2.1** | 2026-04-12 | README 기술 보고서 전면 재작성, app.py 반영, Notion v1.0.3 AI 파이프라인 55건 반영, 이화영 박사 AI TD 추가, LLM & RAG·KALIS-FMS·세움터·남대문교회·법무법인 수호 추가 |
+| **v2.0** | 2026-04 | 9번째 페이지 "AI 데이터 파이프라인" 신규 추가 (55개 학습데이터셋 명세), `make_ai_pipeline_samples()` 함수 추가, Render.com 배포 Blueprint 추가, `requirements.txt` 패키지 버전 고정 |
 | **v1.0** | 2026-03 | 초기 릴리스 — 8개 페이지 (통합 대시보드, 비전AI, RPA, 민원, IoT, 예방정비, 마일리지, Vision 2030), 기본 데이터 모델 9개, CSS 디자인 시스템 구축 |
 
 ---

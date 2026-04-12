@@ -22,7 +22,8 @@
       "Bash(python:*)",
       "Bash(python create_v103_report.py)",
       "Bash(pip list:*)",
-      "Bash(sed 's/^[[:space:]]*//')"
+      "Bash(sed 's/^[[:space:]]*//')",
+      "Bash(ls *.py)"
     ]
   }
 }
