@@ -79,6 +79,7 @@ SH 서울주택도시공사 및 경상북도개발공사가 관리하는 공공�
 | **수치 계산** | NumPy | 1.26.4 | 시뮬레이션 데이터 생성, 통계 연산 |
 | **이미지 처리** | Pillow | 11.1.0 | AI 탐지 결과 시뮬레이션 이미지 생성 |
 | **머신러닝** | scikit-learn | 1.8.0 | 9개 AI 파이프라인 모델 학습·추론 (RF, GBM, IF, GBR, LR, PCA 등) |
+| **통계 분석** | statsmodels | 0.14.4 | Plotly 회귀 추세선(OLS) 계산 (경과년수 vs 노후도 회귀분석) |
 | **런타임** | Python | 3.11.9 | 실행 환경 |
 
 ### 2.2 의존성 설치
@@ -95,6 +96,7 @@ pandas==2.2.3
 numpy==1.26.4
 Pillow==11.1.0
 scikit-learn==1.8.0
+statsmodels==0.14.4
 ```
 
 ---
@@ -106,7 +108,7 @@ PythonProject3/
 ├── app.py                    # 메인 애플리케이션 (2,044줄, 9개 페이지 전체 구현)
 ├── ai_pipeline.py            # AI 파이프라인 엔진 (743줄, 9개 모델 학습·추론, scikit-learn)
 ├── main.py                   # 실행 진입점 (streamlit run app.py 래퍼)
-├── requirements.txt          # Python 의존성 패키지 (6개, 버전 고정)
+├── requirements.txt          # Python 의존성 패키지 (7개, 버전 고정)
 ├── render.yaml               # Render.com 클라우드 배포 Blueprint
 ├── README.md                 # 기술 보고서 (본 문서)
 ├── .streamlit/
@@ -723,6 +725,7 @@ streamlit run app.py
 
 | 버전 | 날짜 | 주요 변경 사항 |
 |------|------|---------------|
+| **v2.3** | 2026-04-15 | **의존성 추가:** `statsmodels==0.14.4` 추가 — Plotly `trendline="ols"` (경과년수 vs 노후도 회귀분석 산점도, `app.py:1120`) 렌더링을 위한 OLS 회귀 백엔드, Render 배포 `ModuleNotFoundError` 해결 |
 | **v2.2** | 2026-04-13 | **AI 파이프라인 실제 모델 구현:** `ai_pipeline.py` 신설 (AXPipelineEngine 클래스, 9개 파이프라인 Mock 데이터 생성+scikit-learn 모델 학습·추론), PAGE 9 전면 교체 (3탭: Mock 데이터/모델 학습 결과/시각화), `scikit-learn==1.8.0` 추가, 라이브 데모 URL 추가 (https://ax-sprint-prototype.onrender.com/) |
 | **v2.1** | 2026-04-12 | README 기술 보고서 전면 재작성, Notion v1.0.3 AI 파이프라인 55건 반영, 이화영 박사 AI TD 추가, LLM & RAG·KALIS-FMS·세움터·남대문교회·법무법인 수호 추가 |
 | **v2.0** | 2026-04 | 9번째 페이지 "AI 데이터 파이프라인" 신규 추가 (55개 학습데이터셋 명세), `make_ai_pipeline_samples()` 함수 추가, Render.com 배포 Blueprint 추가, `requirements.txt` 패키지 버전 고정 |
