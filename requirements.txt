@@ -9,3 +9,4 @@ pandas==2.2.3           # 데이터프레임 처리
 numpy==1.26.4           # 수치 계산
 Pillow==11.1.0          # AI 탐지 결과 이미지 시뮬레이션
 scikit-learn==1.8.0     # AI 파이프라인 모델 학습·추론 (9개 파이프라인)
+statsmodels==0.14.4     # plotly trendline="ols" 회귀분석용
