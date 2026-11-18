@@ -1,737 +1,502 @@
-# 에이톰-AX | AX 기반 공공주택 안전·유지관리 플랫폼 — 기술 보고서
+# 에이톰-AX · Atom-AX
 
-> **과제명:** AX 기반 공공임대주택 시설물 안전·유지관리 최적화 및 지능형 행정 자동화 솔루션 상용화
-> **사업:** 국토교통부 AX-SPRINT (AI 응용제품 신속 상용화 지원사업) — 국토·교통분야
-> **주관:** (주)에이톰엔지니어링 | **참여:** 세종대학교 산학협력단 × 한국화재보험협회(방재시험연구원)
-> **위탁:** (사)첨단기술안전점검협회(HSIA) | **자문:** 한국건설기술연구원(KICT) × 법무법인 수호
-> **수요처:** 서울주택도시공사(SH) × 경상북도개발공사
-> **버전:** v2.2 (2026-04-13) | **TRL 8** 수준 현장실증 프로토타입
-> **라이브 데모:** https://ax-sprint-prototype.onrender.com/
+**AX 기반 공공주택 안전·유지관리 플랫폼 — 기술 보고서 · AX-based Public Housing Safety & Maintenance Platform — Technical Report**
 
----
-
-## 목차
-
-1. [시스템 개요](#1-시스템-개요)
-2. [기술 스택 및 의존성](#2-기술-스택-및-의존성)
-3. [파일 구조](#3-파일-구조)
-4. [아키텍처 설계](#4-아키텍처-설계)
-5. [데이터 모델 설계](#5-데이터-모델-설계)
-6. [9개 페이지 기능 상세](#6-9개-페이지-기능-상세)
-7. [AI 모델 적용 현황](#7-ai-모델-적용-현황)
-8. [AI 데이터 파이프라인 — 55개 학습 데이터셋](#8-ai-데이터-파이프라인--55개-학습-데이터셋)
-9. [RPA 행정 자동화 상세](#9-rpa-행정-자동화-상세)
-10. [KPI 목표 및 기대효과](#10-kpi-목표-및-기대효과)
-11. [배포 및 실행 가이드](#11-배포-및-실행-가이드)
-12. [컨소시엄 구성](#12-컨소시엄-구성)
-13. [버전 히스토리](#13-버전-히스토리)
+| 항목 · Item | 한국어 | English |
+|---|---|---|
+| 과제명 · Project | AX 기반 공공임대주택 시설물 안전·유지관리 최적화 및 지능형 행정 자동화 솔루션 상용화 | Commercialising AX-based safety/maintenance optimisation and intelligent admin automation for public rental housing |
+| 사업 · Program | 국토교통부 AX-SPRINT (AI 응용제품 신속 상용화 지원사업) — 국토·교통분야 | MOLIT AX-SPRINT (fast commercialisation of AI products) — land & transport track |
+| 주관 · Lead | (주)에이톰엔지니어링 | Atom Engineering Co., Ltd. |
+| 참여 · Partners | 세종대학교 산학협력단 × 한국화재보험협회(방재시험연구원) | Sejong University × Korea Fire Protection Association (KFPA) |
+| 위탁 · Subcontract | (사)첨단기술안전점검협회 (HSIA) | High-tech Safety Inspection Association (HSIA) |
+| 자문 · Advisory | 한국건설기술연구원 (KICT) × 법무법인 수호 | KICT × Suho Law Firm |
+| 수요처 · Demand sites | 서울주택도시공사 (SH) × 경상북도개발공사 (GBDC) | Seoul Housing (SH) × Gyeongbuk Development Corp. (GBDC) |
+| 버전 · Version | v2.4 (2026-11-19) · TRL 8 수준 현장실증 프로토타입 | v2.4 (2026-11-19) · TRL 8 field-demo prototype |
+| 라이브 데모 · Live demo | https://ax-sprint-prototype.onrender.com/ | https://ax-sprint-prototype.onrender.com/ |
 
 ---
 
-## 1. 시스템 개요
+## 0. 배경 · 왜 · 용어 · Background · Why · Glossary
 
-### 1.1 목적
+| | 한국어 | English |
+|---|---|---|
+| **배경 · 현황** | 9개 페이지 Streamlit 앱과 9개 scikit-learn 파이프라인이 Render 에 배포돼 있다. 데이터는 전부 seed 고정 합성 데이터다. | A 9-page Streamlit app and 9 scikit-learn pipelines run on Render. All data is seeded synthetic data. |
+| **왜 하는가** | AX-SPRINT 사업계획서의 기능(비전 AI · IoT · RPA · XAI)을 수요처가 화면으로 확인하게 한다. 실데이터 연동 전 설계 검증용이다. | It lets demand sites see the AX-SPRINT plan's features (vision AI, IoT, RPA, XAI) on screen. It validates the design before real-data integration. |
+| **구현 범위** | 이 저장소에서 실제로 돌아가는 모형은 §7.1 「프로토타입 구현」 열이다. Y-MaskNet · KoBERT · LSTM 등은 목표 설계이며 아직 코드에 없다. | Models that actually run in this repo are in §7.1 "Prototype" column. Y-MaskNet, KoBERT, LSTM etc. are target designs not yet in code. |
 
-SH 서울주택도시공사 및 경상북도개발공사가 관리하는 공공임대주택 **7개 단지 2,847세대**의 안전·유지관리 및 행정 업무를 AI와 RPA로 통합 자동화하는 웹 기반 플랫폼이다.
+| 용어 · Term | 정의 (KR) | Definition (EN) |
+|---|---|---|
+| AX | AI Transformation. AI 로 업무 방식을 바꾸는 전환 | AI Transformation: re-shaping work processes with AI |
+| TRL | Technology Readiness Level. 기술 성숙도 1~9 단계 | Technology Readiness Level, maturity scale 1–9 |
+| RPA | Robotic Process Automation. 규칙 기반 반복 행정 업무 자동화 | Robotic Process Automation: rule-based automation of repetitive admin work |
+| XAI | Explainable AI. 모형 판정 근거를 보여 주는 AI | Explainable AI: AI that shows the reasons behind a prediction |
+| SHAP | SHapley Additive exPlanations. feature 별 예측 기여도 분해 방법 | SHapley Additive exPlanations: per-feature contribution decomposition |
+| IoT | Internet of Things. 온도 · 습도 · 진동 등 현장 센서망 | Internet of Things: on-site sensor network (temperature, humidity, vibration …) |
+| Digital Twin | 실제 건물을 실시간 데이터로 복제한 가상 모형 | Virtual replica of a building driven by live data |
+| FMS | 국토안전관리원 시설물통합정보관리시스템 (KALIS-FMS) | KALIS Facility Management System |
+| 세움터 · Seumteo | 국토교통부 건축행정 시스템 (건축물대장 · 설계 정보) | MOLIT building-administration system (building register, design data) |
+| RF | Random Forest. 결정나무 여러 개의 다수결 앙상블 | Random Forest: majority-vote ensemble of decision trees |
+| GBC · GBR | Gradient Boosting Classifier · Regressor. 오차를 순차 보정하는 나무 앙상블 | Gradient Boosting Classifier / Regressor: trees fitted sequentially on residuals |
+| HGB | HistGradientBoosting. 구간화(histogram) 기반 고속 gradient boosting | Histogram-based fast gradient boosting |
+| IF | Isolation Forest. 고립이 쉬운 점을 이상치로 보는 비지도 탐지 | Isolation Forest: unsupervised detector that flags easily isolated points |
+| LR | Logistic Regression. 확률을 내는 선형 분류기 | Logistic Regression: linear classifier that outputs probabilities |
+| TF-IDF | Term Frequency–Inverse Document Frequency. 문서 속 단어 가중치 | Term Frequency–Inverse Document Frequency word weighting |
+| F1 | 정밀도와 재현율의 조화평균 | Harmonic mean of precision and recall |
+| PR-AUC | Precision–Recall 곡선 아래 면적. 불균형 이상 탐지 지표 | Area under the precision–recall curve, for imbalanced detection |
+| R² | 결정계수. 회귀가 설명한 분산 비율 | Coefficient of determination: share of variance explained |
+| MAPE | Mean Absolute Percentage Error. 평균 절대 백분율 오차 | Mean Absolute Percentage Error |
+| Walk-forward | 과거로 학습하고 바로 다음 구간으로 검증하는 시계열 검증 | Time-series validation: train on past, test on the next block |
+| Calibration | 예측 확률이 실제 빈도와 맞도록 보정 | Adjusting predicted probabilities to match observed frequencies |
+| Permutation importance | feature 값을 섞었을 때 성능 하락으로 잰 중요도 | Importance measured by score drop when a feature is shuffled |
+| ROI | Return on Investment. 투자 대비 수익률 | Return on Investment |
+| KPI | Key Performance Indicator. 핵심 성과 지표 | Key Performance Indicator |
 
-### 1.2 한 줄 요약
+---
 
-> 드론·앱으로 건물 손상을 자동 탐지하고, IoT·AI가 사고 발생 전 선제 차단하며, 민원·관리비·계약은 RPA 로봇이 자동 처리하는 통합 플랫폼
+## 목차 · Contents
 
-### 1.3 3대 핵심 축
+| # | 한국어 | English |
+|---|---|---|
+| 1 | [시스템 개요](#1-시스템-개요--system-overview) | System overview |
+| 2 | [기술 스택](#2-기술-스택--tech-stack) | Tech stack |
+| 3 | [파일 구조](#3-파일-구조--file-layout) | File layout |
+| 4 | [아키텍처](#4-아키텍처--architecture) | Architecture |
+| 5 | [데이터 모델](#5-데이터-모델--data-model) | Data model |
+| 6 | [9개 페이지](#6-9개-페이지--nine-pages) | Nine pages |
+| 7 | [AI 모델](#7-ai-모델--ai-models) | AI models |
+| 8 | [55개 데이터셋 파이프라인](#8-55개-데이터셋-파이프라인--55-dataset-pipeline) | 55-dataset pipeline |
+| 9 | [RPA 행정 자동화](#9-rpa-행정-자동화--rpa-automation) | RPA automation |
+| 10 | [KPI · 기대효과](#10-kpi--기대효과--kpis--expected-impact) | KPIs & expected impact |
+| 11 | [실행 · 배포](#11-실행--배포--run--deploy) | Run & deploy |
+| 12 | [컨소시엄](#12-컨소시엄--consortium) | Consortium |
+| 13 | [로드맵 · 버전](#13-로드맵--버전--roadmap--versions) | Roadmap & versions |
 
+---
+
+## 1. 시스템 개요 · System overview
+
+| 한국어 | English |
+|---|---|
+| SH 서울주택도시공사와 경상북도개발공사가 관리하는 공공임대주택 **7개 단지 2,847세대**의 안전·유지관리와 행정 업무를 AI 와 RPA 로 묶는 웹 플랫폼이다. | A web platform that combines AI and RPA for safety, maintenance and admin work across **7 complexes / 2,847 households** of public rental housing run by SH and GBDC. |
+| 드론·앱으로 손상을 찾고, IoT·AI 가 사고 전에 경고하고, 민원·관리비·계약은 RPA 가 처리한다. | Drones and an app find damage, IoT and AI warn before incidents, and RPA handles complaints, fees and contracts. |
+
+### 1.1 3대 핵심 축 · Three pillars
+
+```mermaid
+flowchart LR
+    P["에이톰-AX 플랫폼<br/>Atom-AX Platform"]
+    P --> A["① 비전 AI 정밀진단<br/>Vision-AI diagnosis"]
+    P --> B["② AI 사전 예방 정비<br/>AI preventive maintenance"]
+    P --> C["③ RPA 행정 자동화<br/>RPA admin automation"]
+    A --> A1["균열 · 누수 탐지<br/>Crack / leak detection"]
+    A --> A2["드라이비트 화재취약<br/>Dryvit fire risk"]
+    A --> A3["드론 + 앱 멀티모달<br/>Drone + app multimodal"]
+    B --> B1["XAI 위험도 스코어<br/>XAI risk score"]
+    B --> B2["IoT 이상징후<br/>IoT anomaly"]
+    B --> B3["예방 정비 지시서<br/>Work-order generation"]
+    C --> C1["관리비 자동발행<br/>Auto billing"]
+    C --> C2["계약만료 알림<br/>Contract-expiry alert"]
+    C --> C3["민원 분류 · 배정<br/>Complaint triage"]
 ```
-┌────────────────────────────────────────────────────────────────────┐
-│                        에이톰-AX 플랫폼                              │
-│                                                                    │
-│  ① 비전 AI 정밀진단        ② AI 사전 예방 정비       ③ RPA 행정 자동화  │
-│  ─────────────────        ─────────────────        ──────────────  │
-│  Y-MaskNet 균열탐지        XAI 위험도 스코어링        관리비 자동발행     │
-│  드라이비트 화재취약         IoT 이상징후 감지          계약만료 자동알림    │
-│  드론+앱 멀티모달           예방 정비 지시서            민원 자동분류·배정   │
-│  LiDAR 3D 점군분석          Digital Twin 연계          점검 일정 자동생성  │
-└────────────────────────────────────────────────────────────────────┘
-```
 
-### 1.4 관리 대상 단지
+### 1.2 관리 대상 단지 · Managed complexes
 
-| 수요처 | 단지명 | 준공년도 | 세대수 | 유형 |
-|--------|--------|---------|--------|------|
-| SH공사 | 강남 매입임대 A | 1998 | 220 | 매입임대 |
-| SH공사 | 마포 영구임대 B | 2001 | 480 | 영구임대 |
-| SH공사 | 노원 국민임대 C | 2004 | 620 | 국민임대 |
-| SH공사 | 강서 행복주택 D | 2018 | 310 | 행복주택 |
-| SH공사 | 서초 매입임대 E | 1996 | 185 | 매입임대 |
-| 경북개발공사 | 구미 영구임대 A | 2002 | 290 | 영구임대 |
-| 경북개발공사 | 안동 국민임대 B | 2005 | 380 | 국민임대 |
+| 수요처 · Site | 단지 · Complex | 준공 · Built | 세대 · Units | 유형 · Type |
+|---|---|---|---|---|
+| SH | 강남 매입임대 A · Gangnam purchased-rental A | 1998 | 220 | 매입임대 · Purchased rental |
+| SH | 마포 영구임대 B · Mapo permanent-rental B | 2001 | 480 | 영구임대 · Permanent rental |
+| SH | 노원 국민임대 C · Nowon national-rental C | 2004 | 620 | 국민임대 · National rental |
+| SH | 강서 행복주택 D · Gangseo happy-housing D | 2018 | 310 | 행복주택 · Happy housing |
+| SH | 서초 매입임대 E · Seocho purchased-rental E | 1996 | 185 | 매입임대 · Purchased rental |
+| GBDC | 구미 영구임대 A · Gumi permanent-rental A | 2002 | 290 | 영구임대 · Permanent rental |
+| GBDC | 안동 국민임대 B · Andong national-rental B | 2005 | 380 | 국민임대 · National rental |
 
 ---
 
-## 2. 기술 스택 및 의존성
+## 2. 기술 스택 · Tech stack
 
-### 2.1 핵심 기술 스택
-
-| 레이어 | 기술 | 버전 | 용도 |
-|--------|------|------|------|
-| **웹 프레임워크** | Streamlit | 1.44.0 | 대시보드 UI, 반응형 레이아웃 |
-| **시각화** | Plotly | 5.24.1 | 인터랙티브 차트 (Bar, Pie, Scatter, Line, Heatmap, Treemap, Radar) |
-| **데이터 처리** | Pandas | 2.2.3 | DataFrame 기반 데이터 조작·집계·필터링 |
-| **수치 계산** | NumPy | 1.26.4 | 시뮬레이션 데이터 생성, 통계 연산 |
-| **이미지 처리** | Pillow | 11.1.0 | AI 탐지 결과 시뮬레이션 이미지 생성 |
-| **머신러닝** | scikit-learn | 1.8.0 | 9개 AI 파이프라인 모델 학습·추론 (RF, GBM, IF, GBR, LR, PCA 등) |
-| **통계 분석** | statsmodels | 0.14.4 | Plotly 회귀 추세선(OLS) 계산 (경과년수 vs 노후도 회귀분석) |
-| **런타임** | Python | 3.11.9 | 실행 환경 |
-
-### 2.2 의존성 설치
+| 레이어 · Layer | 기술 · Tech | 버전 · Ver | 한국어 용도 | English use |
+|---|---|---|---|---|
+| 웹 · Web | Streamlit | 1.44.0 | 대시보드 UI | Dashboard UI |
+| 시각화 · Viz | Plotly | 5.24.1 | 인터랙티브 차트 | Interactive charts |
+| 데이터 · Data | Pandas | 2.2.3 | DataFrame 조작·집계 | DataFrame wrangling |
+| 수치 · Numeric | NumPy | 1.26.4 | 합성 데이터 · 통계 | Synthetic data, stats |
+| 이미지 · Image | Pillow | 11.1.0 | 탐지 결과 그림 시뮬레이션 | Simulated detection images |
+| ML | scikit-learn | 1.8.0 | 9개 파이프라인 학습·추론 | Train / infer 9 pipelines |
+| 통계 · Stats | statsmodels | 0.14.4 | Plotly OLS 추세선 | Plotly OLS trendline |
+| 런타임 · Runtime | Python | 3.11.9 | 실행 환경 | Runtime |
 
 ```bash
 pip install -r requirements.txt
 ```
 
-`requirements.txt`:
-```
-streamlit==1.44.0
-plotly==5.24.1
-pandas==2.2.3
-numpy==1.26.4
-Pillow==11.1.0
-scikit-learn==1.8.0
-statsmodels==0.14.4
-```
-
 ---
 
-## 3. 파일 구조
+## 3. 파일 구조 · File layout
 
 ```
-PythonProject3/
-├── app.py                    # 메인 애플리케이션 (2,044줄, 9개 페이지 전체 구현)
-├── ai_pipeline.py            # AI 파이프라인 엔진 (743줄, 9개 모델 학습·추론, scikit-learn)
-├── main.py                   # 실행 진입점 (streamlit run app.py 래퍼)
-├── requirements.txt          # Python 의존성 패키지 (7개, 버전 고정)
-├── render.yaml               # Render.com 클라우드 배포 Blueprint
-├── README.md                 # 기술 보고서 (본 문서)
-├── .streamlit/
-│   └── config.toml           # Streamlit 서버 설정 (포트, CORS, 테마)
-├── PDF/                      # 사업계획서 관련 문서
-│   ├── create_v5.py          # V5 사업계획서 생성 스크립트
-│   ├── create_v5_final.py    # V5 최종본 생성 스크립트
-│   ├── create_v103_report.py # v1.0.3 기술보고서 Word 생성
-│   ├── save_notion_links_pdf.py  # Notion 링크 PDF 저장
-│   └── 사업계획서_4장_support.docx
-└── PDF_NEW/                  # 사업계획서 프레임워크 문서
+ax-sprint-prototype/
+├── app.py              # Streamlit 앱, 9개 페이지 · Streamlit app, 9 pages
+├── ai_pipeline.py      # AXPipelineEngine, 9개 scikit-learn 파이프라인 · 9 sklearn pipelines
+├── main.py             # 실행 진입점 (streamlit run 래퍼) · entry point wrapper
+├── requirements.txt    # 의존성 (버전 고정) · pinned dependencies
+├── render.yaml         # Render 배포 Blueprint · Render deploy blueprint
+├── .streamlit/config.toml  # 서버 · 테마 설정 · server & theme
+├── docs/               # 공고문 · 사업계획서 PDF · call notice & plan PDFs
+├── PDF/                # 사업계획서 생성 스크립트 · docx · plan generators & docx
+└── PDF_NEW/            # 사업계획서 프레임워크 메모 · plan framework notes
 ```
 
 ---
 
-## 4. 아키텍처 설계
+## 4. 아키텍처 · Architecture
 
-### 4.1 전체 아키텍처
+### 4.1 전체 구조 · End-to-end
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    Streamlit Web Application                     │
-│  ┌───────────────────────────────────────────────────────────┐  │
-│  │  사이드바 (Navigation)                                      │  │
-│  │  ├── 9개 메뉴 라디오 버튼                                    │  │
-│  │  ├── 수요처 선택 (SH공사 / 경북개발공사)                       │  │
-│  │  └── 단지 선택 (Selectbox)                                  │  │
-│  └───────────────────────────────────────────────────────────┘  │
-│  ┌───────────────────────────────────────────────────────────┐  │
-│  │  메인 콘텐츠 영역 (Page Router)                              │  │
-│  │  ├── PAGE 1: 통합 대시보드          (Line 471~617)          │  │
-│  │  ├── PAGE 2: 비전AI·드론 정밀진단    (Line 618~1135)         │  │
-│  │  ├── PAGE 3: RPA 행정 자동화        (Line 1136~1275)        │  │
-│  │  ├── PAGE 4: AI 민원 관리           (Line 1276~1430)        │  │
-│  │  ├── PAGE 5: IoT·디지털 트윈        (Line 1431~1543)        │  │
-│  │  ├── PAGE 6: AI 사전 예방 정비      (Line 1544~1836)        │  │
-│  │  ├── PAGE 7: 클린하우스 마일리지     (Line 1837~1901)        │  │
-│  │  ├── PAGE 8: Vision 2030 예측분석   (Line 1902~2032)        │  │
-│  │  └── PAGE 9: AI 데이터 파이프라인    (Line 2033~2044)        │  │
-│  └───────────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### 4.2 상태 관리
-
-- `st.session_state`를 사용한 세션 기반 데이터 캐싱
-- 앱 로드 시 1회 초기화 (`st.session_state.초기화완료` 플래그)
-- 10개 DataFrame을 세션에 캐싱하여 페이지 전환 시 데이터 유지
-
-```python
-# 세션 캐시 초기화 (app.py Line 395~418)
-if "초기화완료" not in st.session_state:
-    st.session_state.iot_df         = make_iot_data()        # IoT 센서 시계열
-    st.session_state.complaint_df   = make_complaints()      # 민원 데이터
-    st.session_state.inspection_df  = make_inspection()      # 점검 이력
-    st.session_state.facility_df    = make_facilities()      # 시설물 대장
-    st.session_state.damage_df      = make_damage_detections()  # AI 손상 탐지
-    st.session_state.billing_df     = make_billing_data()    # 관리비 고지서
-    st.session_state.contract_df    = make_contract_data()   # 계약 만료 알림
-    st.session_state.mileage_df     = make_milage_data()     # 클린하우스 마일리지
-    st.session_state.forecast_df    = make_failure_forecast() # 고장 예측
-    st.session_state.pipeline_df    = make_ai_pipeline_samples()  # AI 파이프라인 55개
-    st.session_state.초기화완료     = True
+```mermaid
+flowchart TB
+    subgraph SRC["데이터 원천 · Data sources"]
+        D1["드론 4K 이미지<br/>Drone 4K images"]
+        D2["입주민 앱 사진·글<br/>Resident app photo/text"]
+        D3["IoT 센서 5종<br/>5 IoT sensors"]
+        D4["FMS · 세움터 이력<br/>FMS / Seumteo records"]
+        D5["관리비 · 계약 원장<br/>Billing / contract ledger"]
+    end
+    subgraph AI["AI 엔진 · AI engine (ai_pipeline.py)"]
+        M1["손상 분류<br/>Damage classifier"]
+        M2["이상 탐지<br/>Anomaly detection"]
+        M3["민원 분류<br/>Complaint classifier"]
+        M4["XAI 위험도<br/>XAI risk score"]
+        M5["고장 · 에너지 · 균열 예측<br/>Failure / energy / crack forecast"]
+    end
+    subgraph ACT["실행 · Actions"]
+        R1["RPA 고지 · 알림<br/>RPA billing & alerts"]
+        R2["정비 지시서<br/>Work orders"]
+        R3["담당자 배정<br/>Staff assignment"]
+    end
+    subgraph UI["Streamlit UI (app.py)"]
+        U["9개 페이지<br/>9 pages"]
+    end
+    D1 & D2 --> M1
+    D2 --> M3
+    D3 --> M2
+    D4 --> M4
+    D3 & D4 --> M5
+    D5 --> R1
+    M1 & M2 & M4 --> R2
+    M3 --> R3
+    M1 & M2 & M3 & M4 & M5 & R1 & R2 & R3 --> U
 ```
 
-### 4.3 UI 컴포넌트 체계
+### 4.2 페이지 라우팅 · Page routing
 
-| 컴포넌트 | CSS 클래스 | 용도 |
-|----------|-----------|------|
-| KPI 카드 (블루) | `.kpi-card` | 일반 지표 표시 |
-| KPI 카드 (녹색) | `.kpi-card-green` | 목표 달성·정상 지표 |
-| KPI 카드 (빨간) | `.kpi-card-red` | 고위험·긴급 지표 |
-| KPI 카드 (앰버) | `.kpi-card-amber` | 주의·경고 지표 |
-| 알림 박스 | `.alert-critical/warning/ok/info` | 실시간 상태 알림 |
-| 섹션 헤더 | `.sh` | 페이지 내 구역 구분 |
-| RPA 진행 바 | `.rpa-row/bar-bg/bar-fill` | 자동화율 시각화 |
-| 위험도 태그 | `.tag-high/mid/low` | 위험도 등급 표시 |
-| 단계 카드 | `.step-card/title/desc` | 워크플로우 단계 표시 |
+```mermaid
+flowchart LR
+    S --> Q["수요처 · 단지 선택<br/>Site & complex"]
+    S --> N{"메뉴<br/>Menu"}
+    N --> P1["1 통합 대시보드<br/>Dashboard"]
+    N --> P2["2 비전AI · 드론<br/>Vision AI & drone"]
+    N --> P3["3 RPA 행정<br/>RPA admin"]
+    N --> P4["4 AI 민원<br/>AI complaints"]
+    N --> P5["5 IoT · 디지털 트윈<br/>IoT & digital twin"]
+    N --> P6["6 AI 예방 정비<br/>Preventive maintenance"]
+    N --> P7["7 클린하우스 마일리지<br/>Clean-house mileage"]
+    N --> P8["8 Vision 2030 예측<br/>Vision 2030 forecast"]
+    N --> P9["9 AI 데이터 파이프라인<br/>AI data pipeline"]
+```
 
-### 4.4 테마 설정 (`.streamlit/config.toml`)
+### 4.3 세션 캐시 · Session cache
 
-```toml
-[theme]
-primaryColor        = "#2563eb"     # 에이톰-AX 브랜드 블루
-backgroundColor     = "#ffffff"
-secondaryBackgroundColor = "#f5f7ff"
-textColor           = "#1a1a2e"
-font                = "sans serif"
+| 한국어 | English |
+|---|---|
+| 앱이 처음 열릴 때 `make_*()` 10개가 DataFrame 을 만들고 `st.session_state` 에 넣는다. 페이지를 바꿔도 같은 데이터를 쓴다. | On first load, ten `make_*()` functions build DataFrames into `st.session_state`. Page switches reuse the same data. |
+| `np.random.seed(2026)` 으로 고정해 매번 같은 값이 나온다. | `np.random.seed(2026)` fixes the values on every run. |
+
+```mermaid
+sequenceDiagram
+    participant B as 브라우저 · Browser
+    participant A as app.py
+    participant S as session_state
+    participant E as AXPipelineEngine
+    B->>A: 첫 접속 · first visit
+    A->>S: "초기화완료" 없음? · flag missing?
+    A->>S: make_*() 10개 DataFrame 저장 · store 10 DataFrames
+    B->>A: 페이지 9 열기 · open page 9
+    A->>E: 합성 데이터 생성 + 학습 · generate + train
+    E-->>A: 지표 · 중요도 · 예측 · metrics, importance, predictions
+    A-->>B: 차트 · 표 렌더 · render charts & tables
 ```
 
 ---
 
-## 5. 데이터 모델 설계
+## 5. 데이터 모델 · Data model
 
-### 5.1 데이터 생성 함수 (10개)
+### 5.1 데이터 생성 함수 · Generator functions
 
-앱 초기화 시 사업계획서 기반의 현실적 시뮬레이션 데이터를 생성한다. 시드 고정 (`np.random.seed(2026)`)으로 재현성을 보장한다.
+| 함수 · Function | 한국어 | English | 건수 · Rows |
+|---|---|---|---|
+| `make_iot_data()` | IoT 센서 시계열 | IoT sensor time series | 720 (30 d × 24 h) |
+| `make_complaints()` | 민원 | Complaints | 80 |
+| `make_inspection()` | 점검 이력 | Inspection history | 84 (7 × 12 mo) |
+| `make_facilities()` | 시설물 대장 | Facility register | 7 |
+| `make_damage_detections()` | AI 손상 탐지 | AI damage detections | 8 |
+| `make_billing_data()` | 관리비 고지서 | Fee bills | ~1,512 |
+| `make_contract_data()` | 계약 만료 | Contract expiry | 40 |
+| `make_milage_data()` | 마일리지 | Mileage | 50 |
+| `make_failure_forecast()` | 고장 예측 | Failure forecast | 48 (4 × 12 mo) |
+| `make_ai_pipeline_samples()` | 55개 파이프라인 명세 | 55 pipeline specs | 55 |
 
-| 함수명 | 라인 | 생성 데이터 | 레코드 수 | 주요 필드 |
-|--------|------|-----------|----------|----------|
-| `make_iot_data()` | 137 | IoT 센서 시계열 | 720 (30일×24h) | ts, 온도, 습도, 전력_kWh, 진동_g, CO_ppm |
-| `make_complaints()` | 153 | 민원 데이터 | 80건 | 민원번호, 유형, 위험도, 상태, AI분류, AI신뢰도 |
-| `make_inspection()` | 180 | 점검 이력 | 84건 (7단지×12월) | 단지, 균열건수, 누수건수, 노후도점수, 점검방법 |
-| `make_facilities()` | 202 | 시설물 대장 | 7건 | 준공년도, 외벽재질, 방수공법, FMS연동, 세움터연동 |
-| `make_damage_detections()` | 223 | AI 손상 탐지 | 8건 | 위치, 유형, 폭_mm, 위험도, AI신뢰도, 탐지방법 |
-| `make_billing_data()` | 245 | 관리비 고지서 | ~1,512건 | 호수, 관리비, 전기료, 수도료, 발행상태 |
-| `make_contract_data()` | 265 | 계약 만료 알림 | 40건 | 계약만료일, 잔여일수, 알림상태, 갱신의향 |
-| `make_milage_data()` | 282 | 마일리지 | 50건 | 마일리지, 등급, 자체점검횟수, 인센티브 |
-| `make_failure_forecast()` | 297 | 고장 예측 | 48건 (4단지×12월) | 예상고장건수, AI적용전, 신뢰구간 |
-| `make_ai_pipeline_samples()` | 316 | AI 파이프라인 | 55건 | RAW데이터, 학습데이터, AI모델, 결과, 활용, 효과 |
+### 5.2 IoT 임계값 → 조치 · IoT threshold → action
 
-### 5.2 민원 유형 분류 체계
-
-```python
-COMPLAINT_TYPES = {
-    "누수":           {"위험도": "중", "rpa자동화": 70, "색상": "#3b82f6"},
-    "균열·구조손상":   {"위험도": "고", "rpa자동화": 70, "색상": "#ef4444"},
-    "화재·가연성외벽":  {"위험도": "고", "rpa자동화": 70, "색상": "#f97316"},
-    "시설노후":        {"위험도": "저", "rpa자동화": 70, "색상": "#8b5cf6"},
-    "관리비이의":      {"위험도": "저", "rpa자동화": 100, "색상": "#06b6d4"},
-    "계약관련":        {"위험도": "저", "rpa자동화": 100, "색상": "#84cc16"},
-    "기타":            {"위험도": "저", "rpa자동화": 70, "색상": "#94a3b8"},
-}
+```mermaid
+flowchart LR
+    T["온도 > 30 °C<br/>Temp > 30 °C"] --> T1["환기 권고 문자<br/>Ventilation SMS"]
+    H["습도 > 70 %<br/>Humidity > 70 %"] --> H1["3일 내 누수 점검<br/>Leak check within 3 d"]
+    W["전력 > 4.0 kWh<br/>Power > 4.0 kWh"] --> W1["전기 안전 점검 예약<br/>Electrical inspection"]
+    V["진동 > 0.5 g<br/>Vibration > 0.5 g"] --> V1["구조팀 긴급 점검<br/>Urgent structural check"]
+    C["CO > 10 ppm"] --> C1["환기팀 출동 + 문자<br/>Ventilation crew + SMS"]
 ```
 
-### 5.3 IoT 센서 임계값
+### 5.3 민원 7종 · Seven complaint types
 
-| 센서 | 단위 | 임계값 | 초과 시 조치 |
-|------|------|--------|-------------|
-| 온도 | °C | 30 | 환기 권고 문자 자동 발송 |
-| 습도 | % | 70 | 누수 가능성 — 3일 내 점검 예약 |
-| 전력 | kWh | 4.0 | 전기 안전 점검 자동 예약 |
-| 진동 | g | 0.5 | 구조팀 긴급 점검 요청 |
-| CO 농도 | ppm | 10 | 환기팀 즉시 출동 + 담당자 문자 발송 |
-
----
-
-## 6. 9개 페이지 기능 상세
-
-### PAGE 1: 통합 대시보드 (Line 471~617)
-
-**경로:** `📊 통합 대시보드`
-
-핵심 KPI 6개를 카드 형태로 표시하고, 실시간 위험 알림과 주요 차트를 한 화면에 집약한다.
-
-**KPI 카드 (6열)**
-| 지표 | 값 | 설명 |
-|------|-----|------|
-| 총 관리세대 | 2,847 | 7개 단지 합산 |
-| 점검완료율 | 94.2% | 목표 95% |
-| 고위험 즉시조치 | 7건 | 균열·드라이비트 |
-| 평균 민원처리 | 1.2일 | 기존 3일 → 67% 단축 |
-| AI 탐지 정확도 | 93.1% | Y-MaskNet 기준 |
-| RPA 자동화율 | 81.5% | 관리비·계약·점검 |
-
-**실시간 알림 영역**
-- 긴급 (빨강): 드라이비트 화재취약, 수직균열 0.35mm 등
-- 주의 (황색): CO 16ppm 감지, 드라이비트 교체 권고 등
-- 정보 (파랑): RPA 관리비 자동발행 완료
-- 정상 (녹색): 정기점검 완료·이상없음
-
-**차트 구성**
-- 월별 손상 유형별 탐지 추이 (Stacked Bar)
-- 민원 유형 분포 (Donut Pie)
-- 단지별 노후도 점수 (Horizontal Bar, RdYlGn 색상 스케일)
-- 민원 처리 단계별 현황 (Bar)
-- RPA 자동화율 현황 (커스텀 CSS 프로그레스 바)
-- KPI 목표 대비 달성률 표
+| 유형 · Type | 위험도 · Risk | RPA 자동화 · RPA % |
+|---|---|---|
+| 누수 · Leak | 중 · Mid | 70 |
+| 균열·구조손상 · Crack / structural | 고 · High | 70 |
+| 화재·가연성외벽 · Fire / combustible façade | 고 · High | 70 |
+| 시설노후 · Ageing facility | 저 · Low | 70 |
+| 관리비이의 · Fee dispute | 저 · Low | 100 |
+| 계약관련 · Contract | 저 · Low | 100 |
+| 기타 · Other | 저 · Low | 70 |
 
 ---
 
-### PAGE 2: 비전AI · 드론 정밀진단 (Line 618~1135)
-
-**경로:** `✈ 비전AI · 드론 정밀진단`
-
-Y-MaskNet (Mask R-CNN) 기반 시설물 손상 탐지 시뮬레이션을 제공한다.
-
-**3개 탭 구성:**
-
-**탭 1: AI 이미지 분석**
-- 입력 방식 선택: 앱 업로드 (입주민) / 드론 스캔 (HSIA)
-- 파일 업로더 (JPG, JPEG, PNG 지원)
-- 5가지 샘플 시나리오:
-  - ① 수직균열 0.35mm (고위험, 신뢰도 94%)
-  - ② 누수흔적 (중위험, 신뢰도 88%)
-  - ③ 드라이비트 화재취약 (고위험, 신뢰도 91%)
-  - ④ 옥상 박리손상 2.1mm (고위험, 신뢰도 89%)
-  - ⑤ 수평균열 0.08mm (저위험, 신뢰도 79%)
-- Pillow로 가상 AI 분석 결과 이미지 생성 (바운딩 박스, 세그멘테이션 영역 시뮬레이션)
-- 분석 결과: 손상 유형, 수치 측정값, 위험 판정, 조치 권고
-
-**탭 2: 탐지 결과 현황**
-- AI 손상 탐지 결과 8건 데이터테이블
-- 위험도별 차트 시각화
-
-**탭 3: 세움터·FMS 연동 현황**
-- 7개 단지 시설물 대장 (세움터 연동 상태)
-- 연동 상태, 외벽 재질, 방수 공법, 노후도 점수
-
----
-
-### PAGE 3: RPA 행정 자동화 (Line 1136~1275)
-
-**경로:** `🤖 RPA 행정 자동화`
-
-공공주택 행정 업무의 RPA 자동화 현황을 보여준다.
-
-**4개 탭 구성:**
-
-**탭 1: 관리비 고지서 (RPA 80% 자동화)**
-- 전체 발행 세대 수, 자동발행 완료 건수, 오류 건수, 자동화율 KPI
-- 고지서 발행 샘플 데이터테이블 (상위 30건)
-- 발행 상태 분포 (Pie) + 단지별 평균 관리비 (Bar)
-
-**탭 2: 계약 만료 알림 (RPA 100% 자동화)**
-- 60일 내 만료 계약 목록 자동 추출
-- 잔여일수별 정렬, 갱신의향 표시
-
-**탭 3: 점검 일정 자동생성 (RPA 90%)**
-- 노후도 기반 점검 우선순위 자동 결정
-- 월간 점검 일정 자동 생성
-
-**탭 4: 자동화 성과**
-- RPA 자동화 항목별 달성률 비교
-
----
-
-### PAGE 4: AI 민원 관리 (Line 1276~1430)
-
-**경로:** `📋 AI 민원 관리`
-
-KoBERT 기반 민원 자동분류 및 워크플로우를 구현한다.
-
-**3개 탭 구성:**
-
-**탭 1: 민원 목록 & 관리**
-- 4개 필터 (유형 / 위험도 / 상태 / 수요처) 멀티셀렉트
-- 위험도 아이콘 매핑 (고:🔴, 중:🟡, 저:🟢)
-- AI 처리 워크플로우 5단계:
-  1. 민원 접수 (앱 사진+텍스트)
-  2. AI 자동 분류 (RPA 70%, 신뢰도 72~97%)
-  3. 담당자 자동 배정 (75%)
-  4. 현장 조치 (드론/앱 재점검)
-  5. 완료·피드백
-
-**탭 2: 입주민 앱 민원 접수**
-- 시뮬레이션 민원 접수 폼 (유형·사진·내용 입력)
-- AI 자동분류 결과 실시간 시뮬레이션
-
-**탭 3: 처리 통계**
-- 유형별·상태별·수요처별 통계 차트
-
----
-
-### PAGE 5: IoT · 디지털 트윈 (Line 1431~1543)
-
-**경로:** `📡 IoT · 디지털 트윈`
-
-5개 센서(온도·습도·전력·진동·CO) 실시간 모니터링을 제공한다.
-
-**핵심 기능:**
-- 최신 센서값 KPI (5열, 정상/경고 자동 판정)
-- 조회 기간 슬라이더 (1~30일)
-- 5개 센서 시계열 차트 (Plotly Subplots 2×3 배치)
-- 센서별 임계값 수평선 (점선) 표시
-- 임계값 초과 시 배경색 변경 + `🔴 경고` 뱃지
-
----
-
-### PAGE 6: AI 사전 예방 정비 엔진 (Line 1544~1836)
-
-**경로:** `🛡 AI 사전 예방 정비`
-
-XAI(설명가능 AI) 기반 위험도 스코어링으로 사고를 사전에 차단한다.
-
-**핵심 기능:**
-- KPI 4개: 고위험 단지 3개, 중위험 11건, 예방조치 47건, 사고전환 차단율 94%
-- **단지별 AI 위험도 스코어** (7개 예방 지표 종합, 0~99점)
-  - 70점 이상: 🔴 고위험 → 즉시 정비 지시
-  - 40~70점: 🟡 중위험 → 주간 점검 권고
-  - 40점 미만: 🟢 정상 → 정기 모니터링
-
-- **XAI SHAP 기여도 분석** (Horizontal Bar)
-  - 건물 경과년수 (노후도): 20~32%
-  - IoT 센서 이상 감지 누적: 15~25%
-  - 손상 측정값 추이 (균열폭 진행): 12~22%
-  - 마지막 정기점검 경과일: 8~16%
-  - 기상 데이터 (동결-해동 사이클): 5~12%
-  - 민원 빈도 (누수·균열 관련): 4~10%
-  - 배관 노후도: 3~8%
-
-- **AI 예방 정비 지시서 자동 생성**
-  - 발급일시, 위험도 점수, 위험 등급, 즉시 조치 사항
-  - 조치 근거 (XAI), 후속 모니터링 계획
-  - 법적 근거 및 참고 자료 자동 매핑
-
----
-
-### PAGE 7: 클린하우스 마일리지 (Line 1837~1901)
-
-**경로:** `🏅 클린하우스 마일리지`
-
-입주민 자발적 시설 예방점검 참여를 유도하는 인센티브 제도이다.
-
-**핵심 기능:**
-- KPI 4개: 참여세대 수, 골드 등급 수, 평균 마일리지, 인센티브 지급 총액
-- 세대별 마일리지 현황 데이터테이블 (등급 아이콘 매핑)
-- 등급별 세대 분포 (Bar) + 자체점검 횟수 vs 마일리지 (Scatter)
-
-**등급 체계:**
-
-| 등급 | 기준 | 혜택 |
-|------|------|------|
-| 골드 | 1,000점 이상 | 관리비 20만원 할인 + 우선 수리 |
-| 실버 | 500~999점 | 관리비 10만원 할인 |
-| 브론즈 | 100~499점 | 관리비 5만원 할인 |
-| 일반 | 100점 미만 | 기본 서비스 |
-
----
-
-### PAGE 8: Vision 2030 예측분석 (Line 1902~2032)
-
-**경로:** `🔮 Vision 2030 예측분석`
-
-ML 기반 중장기 예측 분석 (고장·에너지·공실)을 제공한다.
-
-**4개 탭 구성:**
-
-**탭 1: 고장 예측 (ML)**
-- AI 적용 전·후 고장 건수 비교 (Line + Fill)
-- 95% 신뢰구간 표시
-- 단지별 감소율 산출 (목표: 30%)
-
-**탭 2: 에너지 최적화**
-- 현재 전력비 vs AI 최적화 후 비교 (Grouped Bar)
-- 연간 절감 예측 (목표: 15%)
-
-**탭 3: 공실 예측**
-- 6개월 내 공실 발생 확률 예측
-- 주요 원인 분석 (계약만료 집중, 노후시설 기피 등)
-
-**탭 4: 사업화 KPI**
-- ROI 340%, 투자 회수 기간 8개월
-- LH 전국 확산 근거 자료
-
----
-
-### PAGE 9: AI 데이터 파이프라인 — 실제 모델 학습·추론 엔진
-
-**경로:** `🧬 AI 데이터 파이프라인`
-**엔진:** `ai_pipeline.py` → `AXPipelineEngine` 클래스 (scikit-learn 기반)
-
-55개 AI 학습 데이터셋의 End-to-End 파이프라인 명세 + **9개 파이프라인 실제 Mock 데이터 생성 및 모델 학습·추론·평가**를 제공한다.
-
-**실제 구현된 9개 AI 파이프라인:**
-
-| 파이프라인 | Mock 데이터 | sklearn 모델 | 핵심 성능 |
-|-----------|-----------|-------------|----------|
-| 🖼 비전AI 손상 분류 | 500건 (8피처) | RandomForest 7종 분류 | Acc 63%, F1 0.59 |
-| 📡 IoT 이상 탐지 | 720건 (5센서) | IsolationForest + RF | Acc 100%, 76건 탐지 |
-| 📋 민원 자동 분류 | 500건 (10피처) | GradientBoosting 7종 | Acc 99%, F1 0.99 |
-| 🔰 XAI 위험도 스코어링 | 300건 (7지표) | GBC 분류 + GBR 회귀 | Acc 93%, R² 0.93 |
-| ⚙ 고장 예측 | 144건 (시계열) | GBR 시계열 회귀 | R² 0.79, 감소율 24% |
-| ⚡ 에너지 최적화 | 365건 (365일) | GBR 에너지 예측 | R² 0.62, 절감 14% |
-| 🤖 관리비 이상탐지 | 1,000건 | IsolationForest + LR | 이상 Acc 99.5% |
-| 🛡 균열 성장 예측 | 600건 (50균열×12월) | GBR 성장 + RF 활성 | 성장 R² 0.90 |
-| 🏗 지반침하 예측 | 400건 (다변량) | GBC 침하 분류 | Acc 75%, F1 0.80 |
-
-**PAGE 구성 (3탭):**
-- **📂 Mock 데이터:** 생성된 데이터 테이블 + 기술 통계
-- **🤖 모델 학습 결과:** 성능 메트릭 + Feature Importance + Confusion Matrix
-- **📈 시각화:** 파이프라인별 맞춤 차트 (시계열, 산점도, 히스토그램 등)
-
-하단에 55개 파이프라인 전체 명세 (RAW→학습→모델→결과→활용→효과) 테이블 유지
-
----
-
-## 7. AI 모델 적용 현황
-
-### 7.1 모델 카테고리별 현황
-
-| AI 모델 카테고리 | 주요 모델 | 적용 영역 | 핵심 성능 |
-|-----------------|----------|-----------|----------|
-| **비전 AI** | Y-MaskNet (Mask R-CNN, ResNet-101), EfficientNet-B3, PointNet++ | 균열·누수·드라이비트·박락 탐지 | F1=0.97, mAP≥0.92 |
-| **시계열 예측** | LSTM, ARIMA, Seasonal ARIMA, LSTM-Attention | 균열 성장, 센서 이상, 침하 예측 | RMSE=2.1건, MAE=0.3일 |
-| **이상 탐지** | AutoEncoder, Isolation Forest, PCA, DBSCAN | IoT 센서 이상, 전력 이상, 배관 전조 | False Positive ≤5% |
-| **앙상블 학습** | XGBoost, LightGBM, Random Forest, Stacking | 위험도 예측, 민원 예측, 연체 예측 | AUC≥0.85 |
-| **자연어 처리** | KoBERT, LLM + RAG | 민원 7종 분류, 감성분석, 보고서 생성 | Acc=0.92, F1=0.87 |
-| **3D/공간** | PointNet++, ICP, FDS, PINN | Digital Twin, 구조 해석, 화재 시뮬 | mIoU=0.88 |
-| **최적화** | RL, Hungarian Algorithm, Portfolio Risk Management | HVAC 제어, 담당자 배정, 예산 배분 | ROI 340% |
-
-### 7.2 핵심 AI 엔진
-
-**Y-MaskNet (비전 AI 핵심 엔진)**
-- 아키텍처: Mask R-CNN + ResNet-101 백본
-- 입력: 드론 4K 이미지, 입주민 앱 업로드 사진
-- 출력: 인스턴스 세그멘테이션 + 균열폭(mm) 회귀
-- 성능: F1=0.97, IoU=0.91
-
-**Antigravity 오탐보정 엔진**
-- 3중 교차검증: KALIS-FMS 30년 이력 + 일송건축 설계 + 세종대 FEM
-- 오탐 0건 목표
-
-**XAI 위험도 스코어링 엔진 v2.0**
-- 세종대학교 공동개발, 이화영 박사(AI Technical Director) 설계 주도
-- 사우디 PIF 리스크 엔진의 금융공학 정밀도를 건물 붕괴 예측에 이식
-- 7개 예방 지표 종합 평가
-- SHAP 기반 판정 근거 투명성 확보
-
-**LLM + RAG 법령 자동 학습 엔진**
-- 국토교통부 고시 + 시설물안전법 + 주택법 + KICT 가이드라인 자동 학습
-- 법령 변경 감지 시 자동 업데이트 (항상 최신 법령 반영)
-- 점검 결과 + 법적 근거 + 권고 조치 → 공문서 형식 보고서 자동 생성
-- 법무법인 수호 자문 기반 전자문서법 법적 효력 포맷 적용
-- 보고서 작성 시간: 3시간 → 36분 (80% 단축)
-
-**KALIS-FMS 연동 엔진**
-- 국토안전관리원 FMS API 연동 → 20~30년 안전진단 이력 빅데이터 전수 분석
-- 시설물별 노후화 진행 곡선 + 결함 전이 패턴 AI 자율 도출
-- 세종대 비선형 FEM 해석 결합 → 결함 탐지율 95% 이상
-
-**세움터 구조 지능화 + 지하안전 영향평가**
-- 인접 건물 구조 형식·설계 하중·지반 정보 실시간 호출
-- 지질주상도·시추 정보 기반 지반-구조물 상호작용(SSI) 시뮬레이션
-- 남대문교회 지하 초심도 굴착 현장 실증 테스트베드: 붕괴 위험도 99% 확률 예측
-
----
-
-## 8. AI 데이터 파이프라인 — 55개 학습 데이터셋
-
-### 8.1 파이프라인 처리 흐름
-
-```
-① RAW 데이터    ② 학습 데이터    ③ AI 모델      ④ 분석 결과    ⑤ 현장 활용    ⑥ 기대 효과
- 드론이미지  ──▶  라벨링     ──▶  Y-MaskNet ──▶  균열탐지  ──▶  긴급보수  ──▶  사고차단
- IoT센서    ──▶  전처리     ──▶  LSTM      ──▶  이상감지  ──▶  자동배정  ──▶  비용절감
- 민원텍스트  ──▶  피처추출   ──▶  XGBoost   ──▶  위험예측  ──▶  보고서   ──▶  시간단축
- BIM도면    ──▶  증강       ──▶  LLM+RAG   ──▶  자동분류  ──▶  FMS전송  ──▶  만족도↑
+## 6. 9개 페이지 · Nine pages
+
+| # | 페이지 · Page | 한국어 기능 | English features |
+|---|---|---|---|
+| 1 | 📊 통합 대시보드 · Dashboard | KPI 6개, 실시간 알림, 손상 추이 · 민원 분포 · 노후도 · RPA 진행 바 | 6 KPIs, live alerts, damage trend, complaint mix, ageing score, RPA bars |
+| 2 | ✈ 비전AI · 드론 · Vision AI & drone | 앱/드론 입력, 샘플 5종 손상 판정, 탐지 결과 표, 세움터·FMS 연동 현황 | App/drone input, 5 sample cases, detection table, Seumteo/FMS link status |
+| 3 | 🤖 RPA 행정 · RPA admin | 관리비 고지서(80 %), 계약 만료(100 %), 점검 일정(90 %), 성과 | Billing (80 %), contract expiry (100 %), inspection schedule (90 %), results |
+| 4 | 📋 AI 민원 · AI complaints | 필터 4개, 5단계 처리 흐름, 입주민 접수 폼, 처리 통계 | 4 filters, 5-step workflow, resident intake form, stats |
+| 5 | 📡 IoT · 디지털 트윈 | 센서 5종 시계열, 임계값 선, 경고 뱃지 | 5 sensor series, threshold lines, warning badges |
+| 6 | 🛡 AI 예방 정비 · Preventive | 단지별 위험도 0~99, 기여도 막대, 정비 지시서 자동 생성 | Risk score 0–99 per complex, contribution bars, auto work order |
+| 7 | 🏅 마일리지 · Mileage | 세대별 마일리지, 등급 분포, 자체점검 vs 마일리지 | Household mileage, tier mix, self-checks vs mileage |
+| 8 | 🔮 Vision 2030 | 고장 · 에너지 · 공실 예측, 사업화 KPI | Failure / energy / vacancy forecast, business KPIs |
+| 9 | 🧬 AI 데이터 파이프라인 | 9개 파이프라인 합성 데이터 · 학습 결과 · 시각화, 55개 명세 표 | 9 pipelines: data, training results, charts, 55-spec table |
+
+### 6.1 민원 처리 흐름 · Complaint workflow
+
+```mermaid
+sequenceDiagram
+    actor R as 입주민 · Resident
+    participant App as 앱 · App
+    participant AI as 민원 분류기 · Classifier
+    participant RPA as RPA
+    participant S as 담당자 · Staff
+    R->>App: 사진 + 글 접수 · photo + text
+    App->>AI: GBC 분류 (수치 feature) · classify
+    AI-->>App: 유형 · 확률 · 위험도 · type, prob, risk
+    alt 위험도 고 · High risk
+        App->>S: 긴급 배정 · urgent assign
+        S->>R: 현장 재점검 · on-site recheck
+    else 중 · 저 · Mid / Low
+        App->>RPA: 자동 처리 · auto-handle
+        RPA-->>R: 처리 결과 알림 · result notice
+    end
+    R->>App: 완료 피드백 · feedback
 ```
 
-### 8.2 9개 카테고리 구성
+### 6.2 위험도 등급 판정 · Risk grading
 
-| 카테고리 | 건수 | 주요 내용 |
-|---------|------|----------|
-| 비전AI-이미지 | 10건 | 드론·앱 촬영 균열·누수·드라이비트·박락 이미지 분석 |
-| IoT-센서 | 6건 | 온도·CO·진동·습도·전력 이상 탐지 |
-| IoT-LiDAR | 2건 | 3D 점군 세그멘테이션, SLAM 변위 탐지 |
-| 민원-NLP/분석/감성/이미지/예측 | 6건 | 텍스트 분류, 발생 예측, 감성분석, 사진 분류, 처리시간 예측 |
-| DigitalTwin (3D/시뮬/에너지/노후/배관/화재) | 6건 | 구조 해석, 에너지 최적화, 화재 시뮬레이션 |
-| 이상징후 (복합/진동/전력/가스/수위) | 5건 | 다중 센서 융합 이상 탐지 |
-| 선제탐지 (균열/배관/외벽/승강기/방수) | 5건 | 시계열 진행 예측, 예방적 유지보수 |
-| RPA (관리비/계약/점검/민원배정/보고서/고지/에너지) | 7건 | 행정 업무 자동화 파이프라인 |
-| 예방조치 (구조/화재/누수/지반/종합) + 대시보드 | 8건 | 위험도 스코어링, 종합 의사결정, ROI 분석 |
-
-### 8.3 대표 파이프라인 예시
-
-**P-001: 드론 외벽 균열 탐지**
-
-| 단계 | 내용 |
-|------|------|
-| RAW 데이터 | 드론 촬영 외벽 이미지 (4K, 강남A동 3층 북측) |
-| 학습 데이터 | 512×512 패치 분할 + 균열 마스크 라벨링 (COCO format) |
-| AI 모델 | Y-MaskNet (Mask R-CNN, ResNet-101 백본, F1=0.97) |
-| 분석 결과 | 수직균열 탐지: 폭 0.35mm, 길이 42cm, 신뢰도 94% |
-| 현장 활용 | 즉시 구조전문가 요청 → 48h 내 긴급 보수 지시 |
-| 기대 효과 | 대형 구조사고 사전 차단, 보수비 70% 절감 (조기 발견) |
-
-**P-012: CO 농도 이상 감지**
-
-| 단계 | 내용 |
-|------|------|
-| RAW 데이터 | CO 농도센서 시계열 (마포B동 지하, 실시간 1분 간격) |
-| 학습 데이터 | 급등 패턴 라벨 (10ppm 초과 + 상승률 > 2ppm/min = 긴급) |
-| AI 모델 | LSTM 시계열 예측 + Anomaly Score 산출 |
-| 분석 결과 | CO 16.2ppm 급등 (기준 10ppm, 62% 초과) |
-| 현장 활용 | 담당자 긴급 문자 + 환기팀 즉시 출동 + 입주민 대피 안내 |
-| 기대 효과 | CO 중독 사고 사전 차단, 인명피해 0건 유지 |
-
-**P-026: Digital Twin 구조 시뮬레이션**
-
-| 단계 | 내용 |
-|------|------|
-| RAW 데이터 | 세종대 비선형 FEM 구조해석 입력 데이터 (하중·재료·경계조건) |
-| 학습 데이터 | FEM 해석 결과 + 실측 변위 데이터 보정 세트 |
-| AI 모델 | Physics-Informed Neural Network (PINN, FEM 대리모델) |
-| 분석 결과 | 10분 내 구조 안전성 시뮬레이션 완료 (기존 FEM 8시간) |
-| 현장 활용 | 긴급 상황 시 실시간 구조 안전 판정 + 대피 의사결정 |
-| 기대 효과 | 구조 해석 시간 98% 단축, 긴급 대응 의사결정 실시간화 |
+```mermaid
+flowchart TD
+    I["7개 예방 지표<br/>7 preventive indicators"] --> G["GBC 분류 + GBR 점수<br/>GBC class + GBR score"]
+    G --> X["feature importance 근거<br/>Importance-based reasons"]
+    G --> D{"점수 · Score"}
+    D -- "≥ 70" --> H["🔴 고위험 · 즉시 정비 지시<br/>High · immediate work order"]
+    D -- "40–70" --> M["🟡 중위험 · 주간 점검<br/>Mid · weekly inspection"]
+    D -- "< 40" --> L["🟢 정상 · 정기 모니터링<br/>Normal · routine monitoring"]
+```
 
 ---
 
-## 9. RPA 행정 자동화 상세
+## 7. AI 모델 · AI models
 
-### 9.1 자동화율 현황
+### 7.1 9개 파이프라인 — 구현 vs 목표 · Nine pipelines — prototype vs target
 
-| 업무 | 자동화율 | 설명 |
-|------|---------|------|
-| 관리비 고지서 발행 | **80%** | 504세대 자동 생성, 오류 12건 자동 보정 |
-| 계약 만료 알림 | **100%** | 60일 내 만료 자동 추출 + 알림 발송 |
-| 점검 일정 생성 | **90%** | 노후도 기반 우선순위 자동 결정 |
-| 민원 접수·분류 | **70%** | KoBERT 7종 분류, 신뢰도 72~97% |
-| 담당자 자동배정 | **75%** | Hungarian Algorithm + ML 최적화 |
-| **종합 자동화율** | **81.5%** | |
+| 파이프라인 · Pipeline | 합성 데이터 · Data | 프로토타입 구현 · Prototype | 목표 설계 · Target |
+|---|---|---|---|
+| 비전 손상 분류 · Vision damage | 500 × 8 feature | RF 7-class | Y-MaskNet (Mask R-CNN) |
+| IoT 이상 탐지 · IoT anomaly | 720 h × 5 sensors | IF + RF | LSTM / AutoEncoder |
+| 민원 분류 · Complaints | 500 rows + 문장 · text | GBC (수치 feature · numeric) | KoBERT |
+| XAI 위험도 · XAI risk | 300 × 7 | GBC + GBR | XGBoost + SHAP |
+| 고장 예측 · Failure | 144 (시계열 · monthly) | GBR | LSTM-Attention |
+| 에너지 · Energy | 365 d | GBR | RL HVAC 제어 · control |
+| 관리비 이상 · Billing anomaly | 1,000 | IF + RF + LR | Ensemble |
+| 균열 성장 · Crack growth | 50 × 12 mo | GBR + RF | PINN + FEM |
+| 지반침하 · Subsidence | 400 | GBC | SSI 시뮬레이션 · simulation |
 
-### 9.2 성과 지표
+| 한국어 | English |
+|---|---|
+| 성능 수치는 합성 데이터 기준이다. 실데이터 성능을 뜻하지 않는다. 값은 앱 9번 페이지에서 본다. | Scores are on synthetic data and do not imply real-world performance. Values are shown on page 9. |
+| 현재는 무작위 train/test 1회 분할이다. 5-fold · walk-forward 검증은 v2.5 브랜치에서 넣는다 (§7.2). | Currently a single random train/test split. 5-fold and walk-forward validation land in the v2.5 branch (§7.2). |
 
-| 항목 | AI 적용 전 | AI 적용 후 | 개선율 |
-|------|-----------|-----------|--------|
-| 고지서 발행 시간 | 8시간 | 1.5시간 | 81% 단축 |
-| 민원 처리시간 | 3일 | 1일 | 67% 단축 |
-| 민원 배정 시간 | 2시간 | 5분 | 96% 단축 |
-| 보고서 작성 시간 | 3시간 | 36분 | 80% 단축 |
-| 연체율 | 15% | 8% | 47% 감소 |
+### 7.2 v2.5 검증 흐름 (브랜치 진행 중) · v2.5 validation flow (in progress on branch)
 
----
+```mermaid
+flowchart LR
+    G["합성 데이터<br/>Synthetic data<br/>seed 2026"] --> K{"문제 유형<br/>Task type"}
+    K -- "분류 · Classification" --> CV["Stratified 5-fold"]
+    K -- "시계열 · Time series" --> WF["Walk-forward<br/>시간 순 분할 · ordered splits"]
+    K -- "이상 탐지 · Anomaly" --> PR["PR-AUC · F1"]
+    CV --> T["하이퍼파라미터 탐색<br/>Hyper-parameter search"]
+    T --> CAL["확률 보정<br/>Calibration"]
+    WF --> MET["R² · MAPE"]
+    CAL --> MET2["F1 · Accuracy"]
+    MET & MET2 & PR --> PI["Permutation importance"]
+    PI --> UI["모델 성능 페이지 (신설)<br/>New model-performance page"]
+```
 
-## 10. KPI 목표 및 기대효과
+### 7.3 목표 엔진 · Target engines
 
-### 10.1 핵심 KPI
-
-| KPI | 목표 | 현재 달성 |
-|-----|------|----------|
-| 점검완료율 | 95% | 94.2% |
-| AI 탐지 정확도 | 93% | 93.1% |
-| RPA 자동화율 | 80% | 81.5% |
-| 민원 처리시간 | 1일 이내 | 1.2일 |
-| 고장 감소율 | 30% | 진행 중 |
-| 에너지 절감 | 15% | 진행 중 |
-| 공실 감소 | 20% | 진행 중 |
-
-### 10.2 기대효과 (정량)
-
-| 항목 | 연간 절감 |
-|------|----------|
-| 관리비 업무 효율화 | 1,350만원 |
-| 에너지 비용 절감 | 1,800만원 |
-| 보수비 절감 (조기 탐지) | 4,200만원 |
-| **총 절감** | **7,350만원** |
-| **ROI** | **340%** |
-| **투자 회수 기간** | **8개월** |
+| 엔진 · Engine | 한국어 | English |
+|---|---|---|
+| Y-MaskNet | Mask R-CNN + ResNet-101. 드론 4K · 앱 사진에서 균열 영역과 폭(mm)을 낸다. | Mask R-CNN + ResNet-101; outputs crack masks and width (mm) from drone/app images. |
+| 오탐 보정 · False-positive filter | FMS 이력 · 설계도 · FEM 해석 세 가지로 교차검증한다. | Cross-checks with FMS history, design drawings and FEM analysis. |
+| XAI 위험도 v2.0 | 7개 지표를 묶어 점수를 내고 기여도로 근거를 보인다. 금융 리스크 모형 기법을 옮겼다. | Combines 7 indicators into a score with contribution-based reasons; adapts financial risk-model methods. |
+| LLM + RAG | 시설물안전법 · 주택법 · KICT 지침을 검색해 공문서 형식 보고서를 만든다. 3시간 → 36분 목표. | Retrieves facility-safety law, housing law and KICT guidance to draft official-format reports; target 3 h → 36 min. |
+| FMS 연동 · FMS link | 20~30년 안전진단 이력으로 노후화 곡선을 만든다. | Builds ageing curves from 20–30 years of inspection history. |
+| 세움터 · 지하안전 | 인접 건물 구조 · 지반 정보로 지반-구조물 상호작용을 본다. | Uses neighbouring structure and soil data for soil–structure interaction. |
 
 ---
 
-## 11. 배포 및 실행 가이드
+## 8. 55개 데이터셋 파이프라인 · 55-dataset pipeline
 
-### 11.1 로컬 실행
+```mermaid
+flowchart LR
+    A["① RAW 데이터<br/>Raw data"] --> B["② 학습 데이터<br/>Training data"]
+    B --> C["③ AI 모델<br/>AI model"]
+    C --> D["④ 분석 결과<br/>Result"]
+    D --> E["⑤ 현장 활용<br/>Field use"]
+    E --> F["⑥ 기대 효과<br/>Impact"]
+```
+
+| 카테고리 · Category | 건수 · # | 한국어 | English |
+|---|---|---|---|
+| 비전AI-이미지 · Vision image | 10 | 균열 · 누수 · 드라이비트 · 박락 | Crack, leak, Dryvit, spalling |
+| IoT-센서 · IoT sensor | 6 | 온도 · CO · 진동 · 습도 · 전력 | Temp, CO, vibration, humidity, power |
+| IoT-LiDAR | 2 | 3D 점군 분할 · SLAM 변위 | 3D point-cloud segmentation, SLAM displacement |
+| 민원 · Complaints | 6 | 문장 분류 · 발생 예측 · 감성 · 사진 · 처리시간 | Text class, volume forecast, sentiment, photo, handling time |
+| Digital Twin | 6 | 구조 · 에너지 · 화재 시뮬레이션 | Structure, energy, fire simulation |
+| 이상징후 · Anomaly | 5 | 다중 센서 융합 탐지 | Multi-sensor fusion detection |
+| 선제탐지 · Early detection | 5 | 균열 · 배관 · 외벽 · 승강기 · 방수 진행 예측 | Crack, pipe, façade, elevator, waterproofing progression |
+| RPA | 7 | 관리비 · 계약 · 점검 · 배정 · 보고서 · 고지 · 에너지 | Billing, contract, inspection, assignment, report, notice, energy |
+| 예방조치 + 대시보드 · Prevention + dashboard | 8 | 위험도 · 종합 의사결정 · ROI | Risk scoring, decision support, ROI |
+
+---
+
+## 9. RPA 행정 자동화 · RPA automation
+
+| 업무 · Task | 자동화 · Auto % | 전 → 후 · Before → After |
+|---|---|---|
+| 관리비 고지서 · Fee bills | 80 % | 8 h → 1.5 h |
+| 계약 만료 알림 · Contract expiry | 100 % | 60일 내 자동 추출 · auto-extract within 60 d |
+| 점검 일정 · Inspection schedule | 90 % | 노후도 우선순위 · ageing-based priority |
+| 민원 분류 · Complaint triage | 70 % | 3 d → 1 d |
+| 담당자 배정 · Staff assignment | 75 % | 2 h → 5 min |
+| **종합 · Overall** | **81.5 %** | |
+
+---
+
+## 10. KPI · 기대효과 · KPIs & expected impact
+
+| KPI | 목표 · Target | 현재 · Current (합성 · synthetic) |
+|---|---|---|
+| 점검완료율 · Inspection completion | 95 % | 94.2 % |
+| AI 탐지 정확도 · Detection accuracy | 93 % | 93.1 % |
+| RPA 자동화율 · RPA rate | 80 % | 81.5 % |
+| 민원 처리시간 · Complaint time | ≤ 1 d | 1.2 d |
+| 고장 감소 · Failure reduction | 30 % | 진행 중 · in progress |
+| 에너지 절감 · Energy saving | 15 % | 진행 중 · in progress |
+| 공실 감소 · Vacancy reduction | 20 % | 진행 중 · in progress |
+
+| 항목 · Item | 연간 · Annual |
+|---|---|
+| 관리비 업무 효율화 · Billing efficiency | 1,350만원 · KRW 13.5 M |
+| 에너지 비용 · Energy cost | 1,800만원 · KRW 18.0 M |
+| 조기 탐지 보수비 · Early-repair saving | 4,200만원 · KRW 42.0 M |
+| **총 절감 · Total** | **7,350만원 · KRW 73.5 M** |
+| **ROI · 회수 기간 · Payback** | **340 % · 8개월 · 8 months** |
+
+---
+
+## 11. 실행 · 배포 · Run & deploy
 
 ```bash
-# 1. 의존성 설치
 pip install -r requirements.txt
-
-# 2. 실행 (방법 1: main.py 경유)
-python main.py
-
-# 3. 실행 (방법 2: 직접 실행)
-streamlit run app.py
-
-# 4. 브라우저 접속
+python main.py            # 또는 · or: streamlit run app.py
 # http://localhost:8501
 ```
 
-### 11.2 Render 클라우드 배포
+```mermaid
+flowchart LR
+    Dev["로컬 수정<br/>Local edit"] --> Git["git push main"]
+    Git --> R["Render autoDeploy"]
+    R --> Bld["pip install -r requirements.txt"]
+    Bld --> Run["streamlit run app.py<br/>--server.port $PORT"]
+    Run --> HC["헬스체크<br/>/_stcore/health"]
+    HC --> Live["ax-sprint-prototype.onrender.com"]
+```
 
-**라이브 URL:** https://ax-sprint-prototype.onrender.com/
-
-`render.yaml` Blueprint 설정:
-- **서비스 타입:** Web (HTTP)
-- **런타임:** Python 3.11.9
-- **리전:** Singapore (한국 최근접)
-- **플랜:** Free (월 750시간)
-- **자동 배포:** GitHub push 시 자동 재배포 (`autoDeploy: true`)
-- **헬스체크:** `/_stcore/health`
-- **시작 명령:** `streamlit run app.py --server.port $PORT --server.headless true`
-
-### 11.3 서버 설정 (`.streamlit/config.toml`)
-
-| 설정 | 값 | 설명 |
-|------|-----|------|
-| `server.headless` | true | 브라우저 자동 실행 안 함 |
-| `server.port` | 10000 | Render 기본 포트 |
-| `server.address` | 0.0.0.0 | 모든 IP 접근 허용 |
-| `server.enableCORS` | false | Render 프록시가 처리 |
-| `server.enableXsrfProtection` | true | XSRF 공격 방어 |
-| `server.maxUploadSize` | 50 | 파일 업로드 최대 50MB |
+| 설정 · Setting | 값 · Value | 한국어 | English |
+|---|---|---|---|
+| region | singapore | 한국 최근접 리전 | Closest region to Korea |
+| plan | free | 월 750시간 | 750 h / month |
+| `server.maxUploadSize` | 50 | 업로드 최대 50 MB | Max upload 50 MB |
+| `server.enableXsrfProtection` | true | XSRF 방어 | XSRF protection |
 
 ---
 
-## 12. 컨소시엄 구성
+## 12. 컨소시엄 · Consortium
 
-| 역할 | 기관 | 담당 |
-|------|------|------|
-| **주관** | (주)에이톰엔지니어링 | 플랫폼 개발·운영, AI 모델 통합, 과제 총괄 |
-| **AI TD** | 이화영 박사 (기술혁신 소장) | XAI 위험도 엔진 설계, LLM & RAG 아키텍처, 금융공학 기반 리스크 모델 |
-| **참여** | 세종대학교 산학협력단 | FEM 구조해석, PINN, Y-MaskNet AI 고도화, AI Hub 표준화 |
-| **참여** | 한국화재보험협회 (방재시험연구원) | AI 신뢰성 독립 검증, KFS 적합성 평가, 보험료 할인 BM |
-| **위탁** | (사)첨단기술안전점검협회 (HSIA) | 드론 점검 운용, 시계열 DB 구축, 데이터 라벨링 |
-| **자문** | 한국건설기술연구원 (KICT) | 정책 부합성 자문, NET 출원 지원, 법령 적합성 검토 |
-| **자문** | 법무법인 수호 | AI 보고서 공문서 효력 자문, 행정 자동화 법률 검증 |
-| **수요처** | 서울주택도시공사 (SH) | 서울 5개 단지 2,000세대 실증, FMS 연동 |
-| **수요처** | 경상북도개발공사 (GBDC) | 경북 2개 단지 670세대, 지방 확산 레퍼런스 |
-
-**AI Technical Director — 이화영 박사**
-
-| 항목 | 내용 |
-|------|------|
-| 학력 | 영국 Essex 대학교 박사 (Computational Finance · AI) |
-| 핵심 경력 | 사우디아라비아 국부펀드(PIF) 리스크 엔진 구축 리드 — 수십조 원 자산 실시간 위험 모델 설계 |
-| 에이톰-AX 역할 | 금융공학 + AI로 시설물 붕괴 확률 및 유지관리 비용을 퀀트 수준 정밀도로 구현 |
-| LLM & RAG | 금융 도메인 특화 LLM 구축 경험 이식 → 국토교통 법령 자동 학습, 지능형 점검 보고서 자동 생성 |
+```mermaid
+flowchart TB
+    L["주관 · Lead<br/>(주)에이톰엔지니어링 · Atom Engineering"]
+    L --> P1["참여 · Partner<br/>세종대 · Sejong Univ.<br/>FEM · PINN · 비전 AI"]
+    L --> P2["참여 · Partner<br/>한국화재보험협회 · KFPA<br/>AI 신뢰성 검증 · reliability test"]
+    L --> S1["위탁 · Subcontract<br/>HSIA<br/>드론 점검 · 라벨링 · drone & labelling"]
+    L --> A1["자문 · Advisory<br/>KICT · 법무법인 수호 · Suho Law"]
+    L --> D1["수요처 · Demand<br/>SH 5개 단지 · 5 complexes"]
+    L --> D2["수요처 · Demand<br/>GBDC 2개 단지 · 2 complexes"]
+```
 
 ---
 
-## 13. 버전 히스토리
+## 13. 로드맵 · 버전 · Roadmap & versions
 
-| 버전 | 날짜 | 주요 변경 사항 |
-|------|------|---------------|
-| **v2.3** | 2026-04-15 | **의존성 추가:** `statsmodels==0.14.4` 추가 — Plotly `trendline="ols"` (경과년수 vs 노후도 회귀분석 산점도, `app.py:1120`) 렌더링을 위한 OLS 회귀 백엔드, Render 배포 `ModuleNotFoundError` 해결 |
-| **v2.2** | 2026-04-13 | **AI 파이프라인 실제 모델 구현:** `ai_pipeline.py` 신설 (AXPipelineEngine 클래스, 9개 파이프라인 Mock 데이터 생성+scikit-learn 모델 학습·추론), PAGE 9 전면 교체 (3탭: Mock 데이터/모델 학습 결과/시각화), `scikit-learn==1.8.0` 추가, 라이브 데모 URL 추가 (https://ax-sprint-prototype.onrender.com/) |
-| **v2.1** | 2026-04-12 | README 기술 보고서 전면 재작성, Notion v1.0.3 AI 파이프라인 55건 반영, 이화영 박사 AI TD 추가, LLM & RAG·KALIS-FMS·세움터·남대문교회·법무법인 수호 추가 |
-| **v2.0** | 2026-04 | 9번째 페이지 "AI 데이터 파이프라인" 신규 추가 (55개 학습데이터셋 명세), `make_ai_pipeline_samples()` 함수 추가, Render.com 배포 Blueprint 추가, `requirements.txt` 패키지 버전 고정 |
-| **v1.0** | 2026-03 | 초기 릴리스 — 8개 페이지 (통합 대시보드, 비전AI, RPA, 민원, IoT, 예방정비, 마일리지, Vision 2030), 기본 데이터 모델 9개, CSS 디자인 시스템 구축 |
+```mermaid
+timeline
+    title 에이톰-AX 버전 · Atom-AX versions
+    2026-03 : v1.0 8개 페이지 · 8 pages
+    2026-04 : v2.0 55개 명세 페이지 · 55-spec page
+            : v2.2 ai_pipeline.py 9개 모형 · 9 models
+            : v2.3 statsmodels 추가 · added
+    2026-11 : v2.4 README KR·EN + mermaid
+            : v2.5 검증·튜닝·XAI·문장 분류 · validation, tuning, XAI, text
+            : v2.5 UI KR/EN · 축 라벨 · 모델 성능 페이지 · axis labels, perf page
+```
+
+| 버전 · Ver | 날짜 · Date | 한국어 | English |
+|---|---|---|---|
+| v2.5 | 2026-11 (브랜치 · branch) | 검증 체계(5-fold · walk-forward), HGB 튜닝 · 보정, permutation importance, TF-IDF 민원 분류, UI KR/EN · 축 라벨 · 10번 모델 성능 페이지 | Validation (5-fold, walk-forward), HGB tuning & calibration, permutation importance, TF-IDF complaints, UI KR/EN, axis labels, page 10 |
+| v2.4 | 2026-11-19 | README 를 KR·EN 나란히 + mermaid 다이어그램으로 재작성. 구현 vs 목표 구분 | README rewritten side-by-side KR/EN with mermaid; prototype vs target split |
+| v2.3 | 2026-04-15 | `statsmodels` 추가, Render `ModuleNotFoundError` 해결 | Added `statsmodels`, fixed Render `ModuleNotFoundError` |
+| v2.2 | 2026-04-13 | `ai_pipeline.py` 신설, 9번 페이지 교체 | Added `ai_pipeline.py`, rebuilt page 9 |
+| v2.1 | 2026-04-12 | README 기술 보고서 재작성, 55건 반영 | README report rewrite, 55 specs |
+| v2.0 | 2026-04 | 9번 페이지 · Render Blueprint · 버전 고정 | Page 9, Render blueprint, pinned versions |
+| v1.0 | 2026-03 | 초기 릴리스 8개 페이지 | Initial release, 8 pages |
 
 ---
 
-> **국토교통부 AX-SPRINT 과제 프로토타입 (2026)**
-> **주관: (주)에이톰엔지니어링 | TRL 8 수준 현장실증 중**
+> 국토교통부 AX-SPRINT 과제 프로토타입 (2026) · MOLIT AX-SPRINT prototype (2026)
