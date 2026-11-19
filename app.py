@@ -1619,7 +1619,7 @@ elif page == "🛡 AI 사전 예방 정비":
     col_l, col_r = st.columns([1, 1])
 
     with col_l:
-        selected_prev = st.selectbox("단지 선택", [r["단지"] for r in prevention_data],
+        selected_prev = st.selectbox("단지 선택", [r["단지"] for r in prevention_data], key="p6_cpx",
                                     help="XAI 위험도 판정 근거를 볼 단지를 선택하세요 🏘️\n"
                                          "선택하면 아래 막대 그래프가 해당 단지의 AI 판정 이유를 보여줍니다.")
         row = next(r for r in prevention_data if r["단지"] == selected_prev)
@@ -2082,7 +2082,7 @@ elif page == "🧬 AI 데이터 파이프라인":
     st.divider()
 
     pipeline_names = {k: v["name"] for k, v in eng.pipelines.items()}
-    selected_key = st.selectbox("파이프라인 선택", list(pipeline_names.keys()), format_func=lambda x: pipeline_names[x])
+    selected_key = st.selectbox("파이프라인 선택", list(pipeline_names.keys()), format_func=lambda x: pipeline_names[x], key="p9_pipe")
     p = eng.pipelines[selected_key]
     r = p["result"]
     pdata = p["data"]

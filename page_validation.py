@@ -132,7 +132,7 @@ def render():
             "**Reading** — Risk grade F1 rose 0.60 → 0.75, but fold SD is about 0.2, so the gain is not certain: high-risk rows are only 7 % of 300. "
             "Vision damage moved only 0.50 → 0.53: vertical and horizontal cracks are generated identically, so the features cannot separate them. "
             "Vision therefore needs real image features, not a different model."))
-        key = st.selectbox(T("혼동행렬 과제", "Confusion matrix for"), df["key"].tolist(),
+        key = st.selectbox(T("혼동행렬 과제", "Confusion matrix for"), df["key"].tolist(), key="p10_cm",
                            format_func=lambda k: lab[df["key"].tolist().index(k)])
         cm = out["confusion"][key]
         names = [TYPE_EN.get(c, c) if ui.lang() == "en" else c for c in cm["classes"]]
@@ -173,7 +173,7 @@ def render():
             "**Reading** — Failure random-split R² was 0.84 but only 0.34 walk-forward: the random split put future months into training. "
             "Trees cannot extrapolate a trend. A linear trend + per-complex seasonal model cut WAPE 0.17 → 0.09, beating naive (0.12). "
             "For cracks, predicting the increment instead of the width cut WAPE 0.12 → 0.02."))
-        key = st.selectbox(T("예측 곡선 과제", "Forecast curve for"), ts["key"].tolist(),
+        key = st.selectbox(T("예측 곡선 과제", "Forecast curve for"), ts["key"].tolist(), key="p10_ts",
                            format_func=lambda k: lab[ts["key"].tolist().index(k)])
         cv = out["ts_curves"][key]
         cdf = pd.DataFrame({"x": cv["x"], "y": cv["y"], "b": cv["p_base"], "i": cv["p_imp"]}).groupby("x").sum().reset_index()
@@ -248,7 +248,7 @@ def render():
                 y=("위험 지표", "Risk indicator"))
         fig.update_layout(height=320, margin=dict(t=20))
         st.plotly_chart(fig, use_container_width=True)
-        cpx = st.selectbox(T("단지", "Complex"), sorted(x["local"]["단지"].unique()),
+        cpx = st.selectbox(T("단지", "Complex"), sorted(x["local"]["단지"].unique()), key="p10_xai",
                            format_func=lambda v: CPX_EN.get(v, v) if ui.lang() == "en" else v)
         loc = x["local"][x["local"]["단지"] == cpx].sort_values("model")
         f2 = go.Figure()
