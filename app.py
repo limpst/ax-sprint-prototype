@@ -17,6 +17,10 @@ from plotly.subplots import make_subplots
 from datetime import datetime, timedelta, date
 import random
 import time
+import ui_common as ui
+from ui_common import T
+
+st.plotly_chart = ui.plotly_chart  # 축 라벨 KR/EN 자동 적용 · auto KR/EN axis labels
 from PIL import Image, ImageDraw, ImageFont
 import io
 
@@ -29,6 +33,7 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
+ui.init_lang()
 
 # CSS
 st.markdown("""
@@ -100,6 +105,7 @@ st.markdown("""
 .step-desc  { font-size:12px; color:#6b7280; margin-top:4px; }
 </style>
 """, unsafe_allow_html=True)
+st.markdown(ui.MOBILE_CSS, unsafe_allow_html=True)
 
 # ══════════════════════════════════════════════════════
 # 상수 정의 (문서 기반)
@@ -427,51 +433,35 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
 
-    page = st.radio("", [
-        "📊 통합 대시보드",
-        "✈ 비전AI · 드론 정밀진단",
-        "🤖 RPA 행정 자동화",
-        "📋 AI 민원 관리",
-        "📡 IoT · 디지털 트윈",
-        "🛡 AI 사전 예방 정비",
-        "🏅 클린하우스 마일리지",
-        "🔮 Vision 2030 예측분석",
-        "🧬 AI 데이터 파이프라인",
-    ], label_visibility="collapsed",
-    help="보고 싶은 메뉴를 클릭하세요 🖱️\n\n"
-         "📊 통합 대시보드 — 전체 현황 한눈에\n"
-         "✈ 비전AI — 드론·앱 이미지 AI 분석\n"
-         "🤖 RPA — 관리비·계약·일정 자동화\n"
-         "📋 민원 — 민원 접수·처리 현황\n"
-         "📡 IoT — 센서 실시간 모니터링\n"
-         "🛡 예방 정비 — AI 사고 예방 지시서\n"
-         "🏅 마일리지 — 입주민 참여 인센티브\n"
-         "🔮 Vision 2030 — 고장·에너지 예측\n"
-         "🧬 AI 파이프라인 — 55개 학습데이터 명세"
-    )
+    ui.lang_switch()
+    page = st.radio("menu", [k for k, _ in ui.PAGES], label_visibility="collapsed",
+                    format_func=ui.page_label, key="nav",
+                    help=T("보고 싶은 메뉴를 클릭하세요.", "Pick a page to open."))
+    st.session_state._cur_page = page
 
     st.divider()
-    st.markdown("**수요처 선택**")
-    demand_site = st.radio("", ["SH 서울주택도시공사", "경상북도개발공사"],
+    st.markdown(T("**수요처 선택**", "**Demand site**"))
+    demand_site = st.radio("site", ["SH 서울주택도시공사", "경상북도개발공사"],
+                           format_func=lambda v: T(v, {"SH 서울주택도시공사": "SH Seoul Housing", "경상북도개발공사": "Gyeongbuk Development Corp."}[v]),
                            label_visibility="collapsed",
                            help="데이터를 조회할 공공주택 기관을 선택하세요 🏢\n\n"
                                 "• SH공사: 서울 5개 단지 (강남·서초·마포·강서·노원)\n"
                                 "• 경북개발공사: 경북 2개 단지 (구미·포항)")
     cpx_list = COMPLEXES_SH if "SH" in demand_site else COMPLEXES_GB
-    selected_cpx = st.selectbox("단지 선택", cpx_list,
+    selected_cpx = st.selectbox(T("단지 선택", "Complex"), cpx_list,
                                 help="세부 데이터를 볼 단지를 고르세요 🏘️\n"
                                      "선택한 단지가 AI 분석·민원 접수의 기본 단지로 사용됩니다.")
 
     st.divider()
     st.caption(f"🕐 {datetime.now().strftime('%Y-%m-%d %H:%M')}")
-    st.caption("국토교통부 AX-SPRINT 과제")
-    st.caption("v2.2 · TRL 8 수준 · 현장실증 중")
+    st.caption(T("국토교통부 AX-SPRINT 과제", "MOLIT AX-SPRINT project"))
+    st.caption(T("v2.5 · TRL 8 수준 · 현장실증 중 · 합성 데이터", "v2.5 · TRL 8 · field demo · synthetic data"))
 
 # ══════════════════════════════════════════════════════
 # PAGE 1: 통합 대시보드
 # ══════════════════════════════════════════════════════
 if page == "📊 통합 대시보드":
-    st.title("📊 AX 기반 공공주택 안전·유지관리 통합 대시보드")
+    st.title(T("📊 AX 기반 공공주택 안전·유지관리 통합 대시보드", "📊 AX public-housing safety & maintenance dashboard"))
     st.caption(f"수요처: **{demand_site}** | 단지: **{selected_cpx[:20]}..** | 실시간 현황")
 
     # ── KPI 행 ──
@@ -520,6 +510,7 @@ if page == "📊 통합 대시보드":
         fig.add_bar(x=months, y=[random.randint(0,3)  for _ in months], name="박리·박락",    marker_color="#8b5cf6")
         fig.update_layout(barmode="stack", height=270, margin=dict(t=10,b=10),
                           legend=dict(orientation="h", y=1.05))
+        ui.axes(fig, x=("월", "Month"), y=("AI 가 찾은 손상 건수 (건)", "Damage found by AI (cases)"))
         st.plotly_chart(fig, use_container_width=True)
     with c2:
         st.markdown('<div class="sh">🥧 민원 유형 분포</div>', unsafe_allow_html=True)
@@ -618,7 +609,7 @@ if page == "📊 통합 대시보드":
 # PAGE 2: 비전 AI · 드론 정밀 진단
 # ══════════════════════════════════════════════════════
 elif page == "✈ 비전AI · 드론 정밀진단":
-    st.title("✈ 멀티모달 드론 & 비전AI 정밀진단")
+    st.title(T("✈ 멀티모달 드론 & 비전AI 정밀진단", "✈ Multimodal drone & vision-AI diagnosis"))
     st.caption("Y-MaskNet / Mask R-CNN 인스턴스 세그멘테이션 | 균열·누수·드라이비트 화재취약 탐지 | Antigravity 3중 교차검증")
 
     tab1, tab2, tab3 = st.tabs(["🖼 AI 이미지 분석", "📊 탐지 결과 현황", "🗺 세움터·FMS 연동 현황"])
@@ -1073,6 +1064,7 @@ AI 모델: Y-MaskNet v2.1 + Antigravity 3중 교차검증
                                  color_continuous_scale="YlOrRd",
                                  height=260, text_auto=True)
             fig_heat.update_layout(margin=dict(t=10,b=10), coloraxis_showscale=False)
+            ui.axes(fig_heat, x=("손상 유형", "Damage type"), y=("단지", "Housing complex"))
             st.plotly_chart(fig_heat, use_container_width=True)
 
     with tab3:
@@ -1113,6 +1105,7 @@ AI 모델: Y-MaskNet v2.1 + Antigravity 3중 교차검증
                               annotation_text="주의 (60점)", annotation_position="top")
             fig_age.update_layout(height=300, margin=dict(t=30,b=10,l=10,r=50),
                                    xaxis=dict(range=[0,110], title="건전도 점수"))
+            ui.axes(fig_age, y=("단지", "Housing complex"))
             st.plotly_chart(fig_age, use_container_width=True)
 
         with fac_col2:
@@ -1136,7 +1129,7 @@ AI 모델: Y-MaskNet v2.1 + Antigravity 3중 교차검증
 # PAGE 3: RPA 행정 자동화
 # ══════════════════════════════════════════════════════
 elif page == "🤖 RPA 행정 자동화":
-    st.title("🤖 지능형 행정 자동화 (RPA + AI)")
+    st.title(T("🤖 지능형 행정 자동화 (RPA + AI)", "🤖 Intelligent admin automation (RPA + AI)"))
     st.caption("관리비 자동발행 80% · 계약알림 100% · 민원분류 70% · 점검일정 90%")
 
     tab1, tab2, tab3, tab4 = st.tabs(["📄 관리비 고지서", "📅 계약 만료 알림", "🗓 점검 일정 자동생성", "📊 자동화 성과"])
@@ -1276,7 +1269,7 @@ elif page == "🤖 RPA 행정 자동화":
 # PAGE 4: AI 민원 관리
 # ══════════════════════════════════════════════════════
 elif page == "📋 AI 민원 관리":
-    st.title("📋 AI 민원 처리 워크플로우")
+    st.title(T("📋 AI 민원 처리 워크플로우", "📋 AI complaint workflow"))
     st.caption("RPA 70% 자동분류 · AI 우선순위 배정 · 담당자 자동지정 · 예방 조치 자동 연계")
 
     tab1, tab2, tab3 = st.tabs(["📋 민원 목록 & 관리", "📱 입주민 앱 민원 접수", "📊 처리 통계"])
@@ -1375,9 +1368,15 @@ elif page == "📋 AI 민원 관리":
         if submit_c:
             with st.spinner("AI 분류 엔진 분석 중..."):
                 time.sleep(1.3)
-            info = COMPLAINT_TYPES[nc_type]
+            from ai_validation import predict_complaint_text
             new_num = f"CM-2026-{random.randint(2000,9999)}"
-            ai_score = round(random.uniform(0.78, 0.97), 2)
+            txt = f"{nc_loc} {nc_desc}".strip()
+            if txt:
+                ai_type, prob_tab = predict_complaint_text(ui.get_text_model(), txt)
+                ai_score = float(prob_tab["확률"].iloc[0])
+            else:
+                ai_type, prob_tab, ai_score = nc_type, None, None
+            info = COMPLAINT_TYPES[ai_type]
             st.success(f"✅ 민원 접수 완료 — **{new_num}**")
             m1,m2,m3,m4 = st.columns(4)
             m1.metric("민원번호", new_num,
@@ -1387,12 +1386,27 @@ elif page == "📋 AI 민원 관리":
                            "• 🔴 고: 구조 안전 위험, 즉시 대응\n"
                            "• 🟡 중: 3일 내 현장 점검\n"
                            "• 🟢 저: 7일 내 정기 처리")
-            m3.metric("AI 신뢰도", f"{int(ai_score*100)}%",
+            m3.metric("AI 신뢰도", f"{int(ai_score*100)}%" if ai_score is not None else "—",
                       help="AI 자동 분류 결과에 대한 신뢰도입니다 🎯\n"
                            "90%↑: 매우 신뢰 / 70~90%: 담당자 확인 권장 / 70%↓: 수동 분류")
             m4.metric("RPA 자동화율", f"{info['rpa자동화']}%",
                       help="이 유형의 민원 처리에서 RPA가 자동으로 처리하는 비율입니다 🤖\n"
                            "높을수록 담당자 개입 없이 자동으로 처리됩니다.")
+            if prob_tab is not None:
+                st.markdown(T(f"**AI 문장 분류 결과:** {ai_type} (선택한 유형: {nc_type})",
+                              f"**AI text classification:** {ai_type} (selected: {nc_type})"))
+                if ai_type != nc_type:
+                    st.warning(T("선택한 유형과 AI 분류가 다릅니다. 담당자가 확인합니다.",
+                                 "Selected type differs from the AI result. Staff will review."))
+                if ai_score < 0.7:
+                    st.info(T("확률 70 % 미만 → 수동 분류 대기열로 보냅니다.", "Probability below 70 % → sent to manual triage."))
+                fig_tp = px.bar(prob_tab.head(4), x="확률", y="유형", orientation="h", height=200,
+                                color_discrete_sequence=["#2563eb"])
+                ui.axes(fig_tp, x=("유형일 확률 (0~1)", "Probability of type (0–1)"), y=("민원 유형", "Complaint type"))
+                fig_tp.update_layout(margin=dict(t=10, b=10), yaxis=dict(autorange="reversed"))
+                st.plotly_chart(fig_tp, use_container_width=True)
+            else:
+                st.caption(T("설명이 비어 있어 선택한 유형을 그대로 씁니다.", "No description, so the selected type is used."))
             if info["위험도"] == "고":
                 st.error("🚨 **고위험 민원** — 담당팀장에게 즉시 문자 발송 및 긴급 작업지시서 생성 완료")
             elif info["위험도"] == "중":
@@ -1409,6 +1423,7 @@ elif page == "📋 AI 민원 관리":
             fig.add_bar(x=months, y=[random.randint(10,22) for _ in months], name="접수", marker_color="#3b82f6")
             fig.add_bar(x=months, y=[random.randint(8,20)  for _ in months], name="완료", marker_color="#10b981")
             fig.update_layout(barmode="group", height=280, margin=dict(t=10,b=10))
+            ui.axes(fig, x=("월", "Month"), y=("민원 건수 (건)", "Complaints (cases)"))
             st.plotly_chart(fig, use_container_width=True)
         with col_b:
             st.markdown("**처리 기간 분포 (완료 민원)**")
@@ -1431,7 +1446,7 @@ elif page == "📋 AI 민원 관리":
 # PAGE 5: IoT · 디지털 트윈
 # ══════════════════════════════════════════════════════
 elif page == "📡 IoT · 디지털 트윈":
-    st.title("📡 IoT 실시간 센서 모니터링")
+    st.title(T("📡 IoT 실시간 센서 모니터링", "📡 IoT real-time sensor monitoring"))
     st.caption("온도·습도·전력·진동·CO 농도 | 임계값 초과 시 자동알림 | SH FMS 연동")
 
     latest = iot_df.iloc[-1]
@@ -1480,6 +1495,15 @@ elif page == "📡 IoT · 디지털 트윈":
                                  name=dcol, showlegend=False), row=row, col=col)
         fig.add_hline(y=thr, line_dash="dash", line_color="#94a3b8", row=row, col=col)
     fig.update_layout(height=430, margin=dict(t=40,b=10))
+    _units = [("온도 (°C)", "Temperature (°C)"), ("습도 (%)", "Humidity (%)"), ("전력 (kWh)", "Power (kWh)"),
+              ("진동 (g)", "Vibration (g)"), ("CO 농도 (ppm)", "CO (ppm)")]
+    for _i, ((_r, _c), _u) in enumerate(zip(positions, _units)):
+        fig.update_xaxes(title_text=T("측정 시각", "Time"), row=_r, col=_c)
+        fig.update_yaxes(title_text=T(*_u), row=_r, col=_c)
+    _en_titles = [u[1] for u in _units]
+    if ui.lang() == "en":
+        for _a, _t in zip(fig.layout.annotations, _en_titles):
+            _a.text = _t
     st.plotly_chart(fig, use_container_width=True)
 
     # 이상 이벤트 로그
@@ -1544,7 +1568,7 @@ elif page == "📡 IoT · 디지털 트윈":
 # PAGE 6: AI 사전 예방 정비 엔진
 # ══════════════════════════════════════════════════════
 elif page == "🛡 AI 사전 예방 정비":
-    st.title("🛡 AI 사전 예방 정비 엔진")
+    st.title(T("🛡 AI 사전 예방 정비 엔진", "🛡 AI preventive-maintenance engine"))
     st.caption("XAI 위험도 스코어링 v2.0 (이화영 박사 설계) · Antigravity 3중 교차검증 · LLM+RAG 법령 자동 학습 · 예방 정비 지시서 자동 생성")
 
     # KPI
@@ -1591,7 +1615,7 @@ elif page == "🛡 AI 사전 예방 정비":
     st.markdown("---")
 
     # XAI SHAP 기여도 — 위험도 판정 근거
-    st.markdown("### 🔍 XAI 위험도 판정 근거 (SHAP 기여도)")
+    st.markdown(T("### 🔍 XAI 위험도 판정 근거 (모형 기여도)", "### 🔍 XAI risk reasons (model contributions)"))
     col_l, col_r = st.columns([1, 1])
 
     with col_l:
@@ -1605,28 +1629,27 @@ elif page == "🛡 AI 사전 예방 정비":
                        "• 40~70점: 🟡 중위험 — 주간 점검 권고\n"
                        "• 40점↓: 🟢 정상 — 정기 모니터링 유지")
 
-    raw_shap = {
-        "건물 경과년수 (노후도)": random.uniform(0.20, 0.32),
-        "IoT 센서 이상 감지 누적": random.uniform(0.15, 0.25),
-        "손상 측정값 추이 (균열폭 진행)": random.uniform(0.12, 0.22),
-        "마지막 정기점검 경과일": random.uniform(0.08, 0.16),
-        "기상 데이터 (강우·동결 이력)": random.uniform(0.06, 0.14),
-        "드라이비트 면적 비율": random.uniform(0.04, 0.10),
-        "동일 유형 과거 민원 빈도": random.uniform(0.03, 0.08),
-    }
-    total_shap = sum(raw_shap.values())
-    shap_norm = {k: round(v / total_shap, 3) for k, v in raw_shap.items()}
-    shap_sorted = dict(sorted(shap_norm.items(), key=lambda x: x[1], reverse=True))
-
-    fig_prev = px.bar(
-        x=list(shap_sorted.values()), y=list(shap_sorted.keys()),
-        orientation="h", height=300,
-        labels={"x": "기여도 (SHAP value)", "y": ""},
-        color=list(shap_sorted.values()), color_continuous_scale="Reds",
-        title=f"{selected_prev} — 위험도 판정 근거"
-    )
-    fig_prev.update_layout(margin=dict(t=40, b=10), coloraxis_showscale=False)
-    st.plotly_chart(fig_prev, use_container_width=True)
+    # v2.5: 고정 범위 난수 대신 학습된 위험 모형의 occlusion 기여도 · model-based contributions
+    xai = ui.get_xai()
+    xk = ui.xai_key(selected_prev)
+    from page_validation import FEAT_EN
+    if xk is not None:
+        loc = xai["local"][xai["local"]["단지"] == xk].copy()
+        loc["label"] = loc["feature"].map(lambda f: T(f, FEAT_EN.get(f, f)))
+        loc = loc.sort_values("model")
+        fig_prev = px.bar(loc, x="model", y="label", orientation="h", height=300,
+                          color="model", color_continuous_scale="RdBu_r", color_continuous_midpoint=0,
+                          title=T(f"{selected_prev[:12]} — 위험도 판정 근거", f"{selected_prev[:12]} — risk reasons"))
+        ui.axes(fig_prev, x=("위험 점수에 더한 양 (점, 학습 중앙값 대비)", "Points added to risk score (vs training median)"),
+                y=("위험 지표", "Risk indicator"))
+        fig_prev.update_layout(margin=dict(t=40, b=10), coloraxis_showscale=False)
+        st.plotly_chart(fig_prev, use_container_width=True)
+        st.caption(T("한 지표만 학습 중앙값으로 바꿨을 때 예측 점수가 바뀐 양(occlusion)이다. 양수면 위험을 올린 지표다. "
+                     "모형: HistGradientBoosting 회귀, 합성 데이터. 자세한 검증은 10번 페이지.",
+                     "Change in predicted score when one indicator is set to its training median (occlusion). Positive = raises risk. "
+                     "Model: HistGradientBoosting regressor on synthetic data. Validation details on page 10."))
+    else:
+        st.info(T("이 단지는 위험 모형 학습 데이터에 없습니다.", "This complex is not in the risk-model training data."))
 
     st.markdown("---")
 
@@ -1837,7 +1860,7 @@ KALIS-FMS 이력: 일치 (30년 결함 이력 확인)
 # PAGE 7: 클린하우스 마일리지
 # ══════════════════════════════════════════════════════
 elif page == "🏅 클린하우스 마일리지":
-    st.title("🏅 클린하우스 마일리지 제도")
+    st.title(T("🏅 클린하우스 마일리지 제도", "🏅 Clean-house mileage programme"))
     st.caption("시설물 상태가 양호한 세대에 인센티브 부여 → 입주민 자발적 시설 예방점검 참여 유도")
 
     st.markdown("""
@@ -1902,7 +1925,7 @@ elif page == "🏅 클린하우스 마일리지":
 # PAGE 8: Vision 2030 예측 분석
 # ══════════════════════════════════════════════════════
 elif page == "🔮 Vision 2030 예측분석":
-    st.title("🔮 Vision 2030 — AI 예측 분석")
+    st.title(T("🔮 Vision 2030 — AI 예측 분석", "🔮 Vision 2030 — AI forecasting"))
     st.caption("머신러닝 기반 고장 예측 (30% 감소) · 회귀분석 에너지 최적화 (15% 절감) · 공실 예측")
 
     tab1, tab2, tab3, tab4 = st.tabs(["⚙ 고장 예측 (ML)", "⚡ 에너지 최적화", "🏠 공실 예측", "📈 사업화 KPI"])
@@ -1950,7 +1973,7 @@ elif page == "🔮 Vision 2030 예측분석":
         fig2.add_bar(x=months, y=base_energy, name="현재 전력비 (만원)", marker_color="#f59e0b", opacity=0.7)
         fig2.add_bar(x=months, y=opt_energy, name="AI 최적화 후 (만원)", marker_color="#10b981", opacity=0.85)
         fig2.update_layout(barmode="group", height=320, margin=dict(t=10,b=10),
-                           yaxis_title="월 전력비 (만원)")
+                           yaxis_title="월 전력비 (만원)", xaxis_title=T("월", "Month"))
         st.plotly_chart(fig2, use_container_width=True)
 
         annual_save = round((sum(base_energy) - sum(opt_energy)) * 12 / 12)
@@ -2006,7 +2029,8 @@ elif page == "🔮 Vision 2030 예측분석":
         ))
         fig_kpi.update_layout(height=320, margin=dict(t=30, b=10),
                               yaxis_title="수주 목표 (억 원)",
-                              title="연차별 누적 수주 목표")
+                              xaxis_title=T("사업 연차", "Project year"),
+                              title=T("연차별 누적 수주 목표", "Cumulative order target by year"))
         st.plotly_chart(fig_kpi, use_container_width=True)
 
         st.markdown("""
@@ -2033,16 +2057,11 @@ elif page == "🔮 Vision 2030 예측분석":
 # PAGE 9: AI 데이터 파이프라인 (실제 모델 학습·추론)
 # ══════════════════════════════════════════════════════
 elif page == "🧬 AI 데이터 파이프라인":
-    st.title("🧬 AI 데이터 파이프라인 — 실제 모델 학습·추론 엔진")
+    st.title(T("🧬 AI 데이터 파이프라인 — 실제 모델 학습·추론 엔진", "🧬 AI data pipeline — model training & inference"))
     st.caption("Mock 데이터 생성 → sklearn 모델 학습 → 추론 → 성능 평가 | 9개 파이프라인 실시간 실행")
 
-    if "pipeline_engine" not in st.session_state:
-        with st.spinner("🧬 9개 AI 파이프라인 데이터 생성 + 모델 학습 중... (최초 1회)"):
-            from ai_pipeline import AXPipelineEngine
-            eng = AXPipelineEngine(seed=2026)
-            eng.run_all()
-            st.session_state.pipeline_engine = eng
-    eng = st.session_state.pipeline_engine
+    with st.spinner(T("🧬 9개 AI 파이프라인 학습 중... (서버당 최초 1회)", "🧬 Training 9 pipelines... (once per server)")):
+        eng = ui.get_engine()
 
     pk1, pk2, pk3, pk4, pk5 = st.columns(5)
     with pk1:
@@ -2101,6 +2120,7 @@ elif page == "🧬 AI 데이터 파이프라인":
             classes = r.get("classes", [str(i) for i in range(cm.shape[0])])
             fig_cm = px.imshow(cm, text_auto=True, x=classes, y=classes, height=350, color_continuous_scale="Blues")
             fig_cm.update_layout(margin=dict(t=10, b=10))
+            ui.axes(fig_cm, x=("모형이 예측한 클래스", "Predicted class"), y=("실제 클래스", "Actual class"))
             st.plotly_chart(fig_cm, use_container_width=True)
 
     with tab_result:
@@ -2207,3 +2227,9 @@ elif page == "🧬 AI 데이터 파이프라인":
     fdf = pipeline_df[pipeline_df["분류"].isin(cg2[sg2])]
     st.dataframe(fdf, use_container_width=True, hide_index=True, height=300)
 
+# ══════════════════════════════════════════════════════
+# PAGE 10: 모델 성능 · 검증 (v2.5)
+# ══════════════════════════════════════════════════════
+elif page == "📐 모델 성능 · 검증":
+    import page_validation
+    page_validation.render()

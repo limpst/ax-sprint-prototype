@@ -11,7 +11,7 @@
 | 위탁 · Subcontract | (사)첨단기술안전점검협회 (HSIA) | High-tech Safety Inspection Association (HSIA) |
 | 자문 · Advisory | 한국건설기술연구원 (KICT) × 법무법인 수호 | KICT × Suho Law Firm |
 | 수요처 · Demand sites | 서울주택도시공사 (SH) × 경상북도개발공사 (GBDC) | Seoul Housing (SH) × Gyeongbuk Development Corp. (GBDC) |
-| 버전 · Version | v2.4 (2026-11-19) · TRL 8 수준 현장실증 프로토타입 | v2.4 (2026-11-19) · TRL 8 field-demo prototype |
+| 버전 · Version | v2.5 (2026-11-19) · TRL 8 수준 현장실증 프로토타입 | v2.5 (2026-11-19) · TRL 8 field-demo prototype |
 | 라이브 데모 · Live demo | https://ax-sprint-prototype.onrender.com/ | https://ax-sprint-prototype.onrender.com/ |
 
 ---
@@ -20,7 +20,7 @@
 
 | | 한국어 | English |
 |---|---|---|
-| **배경 · 현황** | 9개 페이지 Streamlit 앱과 9개 scikit-learn 파이프라인이 Render 에 배포돼 있다. 데이터는 전부 seed 고정 합성 데이터다. | A 9-page Streamlit app and 9 scikit-learn pipelines run on Render. All data is seeded synthetic data. |
+| **배경 · 현황** | 10개 페이지 Streamlit 앱(KR/EN 전환)과 9개 scikit-learn 파이프라인 + 검증 모듈이 Render 에 배포돼 있다. 데이터는 전부 seed 고정 합성 데이터다. | A 10-page Streamlit app (KR/EN switch), 9 scikit-learn pipelines and a validation module run on Render. All data is seeded synthetic data. |
 | **왜 하는가** | AX-SPRINT 사업계획서의 기능(비전 AI · IoT · RPA · XAI)을 수요처가 화면으로 확인하게 한다. 실데이터 연동 전 설계 검증용이다. | It lets demand sites see the AX-SPRINT plan's features (vision AI, IoT, RPA, XAI) on screen. It validates the design before real-data integration. |
 | **구현 범위** | 이 저장소에서 실제로 돌아가는 모형은 §7.1 「프로토타입 구현」 열이다. Y-MaskNet · KoBERT · LSTM 등은 목표 설계이며 아직 코드에 없다. | Models that actually run in this repo are in §7.1 "Prototype" column. Y-MaskNet, KoBERT, LSTM etc. are target designs not yet in code. |
 
@@ -44,7 +44,11 @@
 | F1 | 정밀도와 재현율의 조화평균 | Harmonic mean of precision and recall |
 | PR-AUC | Precision–Recall 곡선 아래 면적. 불균형 이상 탐지 지표 | Area under the precision–recall curve, for imbalanced detection |
 | R² | 결정계수. 회귀가 설명한 분산 비율 | Coefficient of determination: share of variance explained |
-| MAPE | Mean Absolute Percentage Error. 평균 절대 백분율 오차 | Mean Absolute Percentage Error |
+| WAPE | Weighted Absolute Percentage Error. 절대 오차 합 ÷ 실제값 절대 합. 0 이 많은 건수 데이터용 | Weighted Absolute Percentage Error: sum of absolute errors ÷ sum of absolute actuals |
+| Naive | 전월(전일) 값을 그대로 다음 예측으로 쓰는 기준선 | Baseline that repeats last month's (day's) value |
+| Brier score | 예측 확률과 실제(0/1)의 제곱 오차 평균 | Mean squared error between probability and 0/1 outcome |
+| Nested CV | 바깥 CV 로 성능, 안쪽 CV 로 하이퍼파라미터 선택 | Outer CV scores, inner CV tunes hyper-parameters |
+| Occlusion | 한 feature 를 중앙값으로 바꿨을 때 예측 변화량 | Prediction change when one feature is set to its median |
 | Walk-forward | 과거로 학습하고 바로 다음 구간으로 검증하는 시계열 검증 | Time-series validation: train on past, test on the next block |
 | Calibration | 예측 확률이 실제 빈도와 맞도록 보정 | Adjusting predicted probabilities to match observed frequencies |
 | Permutation importance | feature 값을 섞었을 때 성능 하락으로 잰 중요도 | Importance measured by score drop when a feature is shuffled |
@@ -124,6 +128,7 @@ flowchart LR
 | 이미지 · Image | Pillow | 11.1.0 | 탐지 결과 그림 시뮬레이션 | Simulated detection images |
 | ML | scikit-learn | 1.8.0 | 9개 파이프라인 학습·추론 | Train / infer 9 pipelines |
 | 통계 · Stats | statsmodels | 0.14.4 | Plotly OLS 추세선 | Plotly OLS trendline |
+| Arrow | pyarrow | 19.0.1 | 최신판은 NumPy 2 필요 → 고정 | Pinned: latest needs NumPy 2 |
 | 런타임 · Runtime | Python | 3.11.9 | 실행 환경 | Runtime |
 
 ```bash
@@ -138,6 +143,10 @@ pip install -r requirements.txt
 ax-sprint-prototype/
 ├── app.py              # Streamlit 앱, 9개 페이지 · Streamlit app, 9 pages
 ├── ai_pipeline.py      # AXPipelineEngine, 9개 scikit-learn 파이프라인 · 9 sklearn pipelines
+├── ai_validation.py    # v2.5 검증 · 튜닝 · XAI · 민원 문장 분류 · validation, tuning, XAI, text
+├── ui_common.py        # KR/EN T() · 축 라벨 사전 · KPI 카드 · 캐시 · i18n, axis labels, KPI, cache
+├── page_validation.py  # 10번 페이지 · page 10
+├── tests/check_pages.py # 10 페이지 × KR/EN 예외 · 축 라벨 검사 · page × language check
 ├── main.py             # 실행 진입점 (streamlit run 래퍼) · entry point wrapper
 ├── requirements.txt    # 의존성 (버전 고정) · pinned dependencies
 ├── render.yaml         # Render 배포 Blueprint · Render deploy blueprint
@@ -192,6 +201,7 @@ flowchart TB
 
 ```mermaid
 flowchart LR
+    S["사이드바<br/>Sidebar"] --> L["언어 KR/EN<br/>Language"]
     S --> Q["수요처 · 단지 선택<br/>Site & complex"]
     S --> N{"메뉴<br/>Menu"}
     N --> P1["1 통합 대시보드<br/>Dashboard"]
@@ -203,6 +213,7 @@ flowchart LR
     N --> P7["7 클린하우스 마일리지<br/>Clean-house mileage"]
     N --> P8["8 Vision 2030 예측<br/>Vision 2030 forecast"]
     N --> P9["9 AI 데이터 파이프라인<br/>AI data pipeline"]
+    N --> P10["10 모델 성능 · 검증<br/>Model performance"]
 ```
 
 ### 4.3 세션 캐시 · Session cache
@@ -221,8 +232,8 @@ sequenceDiagram
     B->>A: 첫 접속 · first visit
     A->>S: "초기화완료" 없음? · flag missing?
     A->>S: make_*() 10개 DataFrame 저장 · store 10 DataFrames
-    B->>A: 페이지 9 열기 · open page 9
-    A->>E: 합성 데이터 생성 + 학습 · generate + train
+    B->>A: 페이지 9/10 열기 · open page 9/10
+    A->>E: 합성 데이터 생성 + 학습 (서버당 1회) · generate + train once per server
     E-->>A: 지표 · 중요도 · 예측 · metrics, importance, predictions
     A-->>B: 차트 · 표 렌더 · render charts & tables
 ```
@@ -284,6 +295,12 @@ flowchart LR
 | 7 | 🏅 마일리지 · Mileage | 세대별 마일리지, 등급 분포, 자체점검 vs 마일리지 | Household mileage, tier mix, self-checks vs mileage |
 | 8 | 🔮 Vision 2030 | 고장 · 에너지 · 공실 예측, 사업화 KPI | Failure / energy / vacancy forecast, business KPIs |
 | 9 | 🧬 AI 데이터 파이프라인 | 9개 파이프라인 합성 데이터 · 학습 결과 · 시각화, 55개 명세 표 | 9 pipelines: data, training results, charts, 55-spec table |
+| 10 | 📐 모델 성능 · 검증 · Model performance | nested CV · walk-forward · PR-AUC · 확률 보정 · XAI · 민원 문장 분류 | Nested CV, walk-forward, PR-AUC, calibration, XAI, complaint text |
+
+| 한국어 | English |
+|---|---|
+| KR/EN 전환 범위(v2.5): 메뉴 · 사이드바 · 페이지 제목 · 모든 차트 축 라벨 · 10번 페이지 전체. 1~9번 페이지의 본문 문장 · 표 내용은 아직 한국어다. | KR/EN scope (v2.5): menu, sidebar, page titles, every chart axis label and all of page 10. Body text and table contents of pages 1–9 are still Korean. |
+| 차트 축 라벨은 `ui_common.AXIS` 사전 한 곳에서 KR/EN 을 만든다. `tests/check_pages.py` 가 20개 화면(10 × 2)에서 축 누락 0 · EN 축 한글 0 을 확인했다 (2026-11-19). | Axis labels come from one dictionary, `ui_common.AXIS`. `tests/check_pages.py` confirmed 0 missing axes and 0 Hangul on EN axes across 20 screens (10 × 2) on 2026-11-19. |
 
 ### 6.1 민원 처리 흐름 · Complaint workflow
 
@@ -295,7 +312,7 @@ sequenceDiagram
     participant RPA as RPA
     participant S as 담당자 · Staff
     R->>App: 사진 + 글 접수 · photo + text
-    App->>AI: GBC 분류 (수치 feature) · classify
+    App->>AI: TF-IDF + LR 문장 분류 · text classify
     AI-->>App: 유형 · 확률 · 위험도 · type, prob, risk
     alt 위험도 고 · High risk
         App->>S: 긴급 배정 · urgent assign
@@ -312,7 +329,7 @@ sequenceDiagram
 ```mermaid
 flowchart TD
     I["7개 예방 지표<br/>7 preventive indicators"] --> G["GBC 분류 + GBR 점수<br/>GBC class + GBR score"]
-    G --> X["feature importance 근거<br/>Importance-based reasons"]
+    G --> X["occlusion 기여도 근거<br/>Occlusion-based reasons"]
     G --> D{"점수 · Score"}
     D -- "≥ 70" --> H["🔴 고위험 · 즉시 정비 지시<br/>High · immediate work order"]
     D -- "40–70" --> M["🟡 중위험 · 주간 점검<br/>Mid · weekly inspection"]
@@ -329,20 +346,20 @@ flowchart TD
 |---|---|---|---|
 | 비전 손상 분류 · Vision damage | 500 × 8 feature | RF 7-class | Y-MaskNet (Mask R-CNN) |
 | IoT 이상 탐지 · IoT anomaly | 720 h × 5 sensors | IF + RF | LSTM / AutoEncoder |
-| 민원 분류 · Complaints | 500 rows + 문장 · text | GBC (수치 feature · numeric) | KoBERT |
-| XAI 위험도 · XAI risk | 300 × 7 | GBC + GBR | XGBoost + SHAP |
-| 고장 예측 · Failure | 144 (시계열 · monthly) | GBR | LSTM-Attention |
-| 에너지 · Energy | 365 d | GBR | RL HVAC 제어 · control |
-| 관리비 이상 · Billing anomaly | 1,000 | IF + RF + LR | Ensemble |
-| 균열 성장 · Crack growth | 50 × 12 mo | GBR + RF | PINN + FEM |
+| 민원 분류 · Complaints | 500 rows + 문장 · text | GBC (수치) + TF-IDF·LR (문장 · text) | KoBERT |
+| XAI 위험도 · XAI risk | 300 × 7 | GBC + HGB 회귀 + permutation · occlusion | XGBoost + SHAP |
+| 고장 예측 · Failure | 144 (시계열 · monthly) | 추세 + 계절 선형 모형 (walk-forward) · trend + seasonal linear | LSTM-Attention |
+| 에너지 · Energy | 365 d | HGB + 계절 sin/cos · 도일 (walk-forward) | RL HVAC 제어 · control |
+| 관리비 이상 · Billing anomaly | 1,000 | IF + 비율 feature · ratios, RF balanced | Ensemble |
+| 균열 성장 · Crack growth | 50 × 12 mo | 증가량 선형 모형 · increment model + RF | PINN + FEM |
 | 지반침하 · Subsidence | 400 | GBC | SSI 시뮬레이션 · simulation |
 
 | 한국어 | English |
 |---|---|
-| 성능 수치는 합성 데이터 기준이다. 실데이터 성능을 뜻하지 않는다. 값은 앱 9번 페이지에서 본다. | Scores are on synthetic data and do not imply real-world performance. Values are shown on page 9. |
-| 현재는 무작위 train/test 1회 분할이다. 5-fold · walk-forward 검증은 v2.5 브랜치에서 넣는다 (§7.2). | Currently a single random train/test split. 5-fold and walk-forward validation land in the v2.5 branch (§7.2). |
+| 성능 수치는 합성 데이터 기준이다. 실데이터 성능을 뜻하지 않는다. 값은 앱 10번 페이지에서 본다. | Scores are on synthetic data and do not imply real-world performance. Values are on page 10. |
+| 분류는 nested CV(바깥 5-fold · 안쪽 3-fold), 시계열은 walk-forward 로 검증한다. seed 2026 으로 재현된다. | Classifiers use nested CV (outer 5, inner 3); time series use walk-forward. Reproducible with seed 2026. |
 
-### 7.2 v2.5 검증 흐름 (브랜치 진행 중) · v2.5 validation flow (in progress on branch)
+### 7.2 검증 흐름 · Validation flow
 
 ```mermaid
 flowchart LR
@@ -352,13 +369,36 @@ flowchart LR
     K -- "이상 탐지 · Anomaly" --> PR["PR-AUC · F1"]
     CV --> T["하이퍼파라미터 탐색<br/>Hyper-parameter search"]
     T --> CAL["확률 보정<br/>Calibration"]
-    WF --> MET["R² · MAPE"]
+    WF --> MET["R² · WAPE vs naive"]
     CAL --> MET2["F1 · Accuracy"]
     MET & MET2 & PR --> PI["Permutation importance"]
-    PI --> UI["모델 성능 페이지 (신설)<br/>New model-performance page"]
+    PI --> UI["10번 페이지 표시<br/>Shown on page 10"]
 ```
 
-### 7.3 목표 엔진 · Target engines
+### 7.3 v2.5 검증 결과 · v2.5 validation results
+
+재현 · Reproduce: `python ai_validation.py` (약 1분 · ~1 min, seed 2026)
+
+| 과제 · Task | 지표 · Metric | 기존 · Original | v2.5 | 기준선 · Baseline |
+|---|---|---|---|---|
+| 비전 손상 7종 · Vision 7-class | F1 macro, 5-fold | RF 0.501 ± 0.010 | HGB 0.525 ± 0.049 | — |
+| 위험 등급 · Risk grade | F1 macro, 5-fold | GBC 0.603 ± 0.174 | HGB 0.753 ± 0.191 | 최빈 클래스 · majority 92.3 % acc |
+| 지반침하 · Subsidence | F1 macro, 5-fold | GBC 0.669 ± 0.034 | HGB 0.682 ± 0.029 | — |
+| 고장 건수 · Monthly failures | WAPE, walk-forward | GBR 0.171 | 선형 · linear 0.089 | naive 0.119 |
+| 일 전력 · Daily energy | WAPE, walk-forward | GBR 0.107 | HGB 0.100 | naive 0.144 |
+| 균열 폭 · Crack width | WAPE, walk-forward | GBR 0.119 | 증가량 · increment 0.017 | naive 0.061 |
+| 관리비 이상 · Billing anomaly | PR-AUC | IF 0.953 | IF + 비율 · ratios 0.976 | 이상 비율 · base rate 0.048 |
+| 지반침하 확률 · Subsidence prob. | Brier | 0.236 | sigmoid 보정 · calibrated 0.193 | 평균 확률 · base rate 0.238 |
+| 민원 문장 · Complaint text | F1 macro, 5-fold | — (수치 feature 만 · numeric only) | TF-IDF + LR 0.934 ± 0.015 | 라벨 오류 5 % · 5 % label noise |
+
+| 한국어 | English |
+|---|---|
+| 고장 예측의 무작위 분할 R² 는 0.84 였지만 walk-forward 로는 0.34 였다. 무작위 분할이 미래 달을 학습에 넣었다. | Failure random-split R² was 0.84 but 0.34 walk-forward: the random split leaked future months. |
+| 위험 등급 개선(+0.15)은 fold 표준편차(약 0.2)보다 작다. 고위험 행이 7 % 뿐이라서다. 확정된 개선으로 보지 않는다. | The risk-grade gain (+0.15) is smaller than fold SD (~0.2), because only 7 % of rows are high-risk. Not treated as a confirmed gain. |
+| 비전 손상은 수직 · 수평 균열이 같은 방식으로 생성돼 feature 로 구분되지 않는다. 모형보다 실제 이미지 feature 가 필요하다. | Vertical and horizontal cracks are generated identically, so features cannot separate them; real image features are needed. |
+| 6번 페이지의 위험 근거 막대는 v2.4 까지 고정 범위 난수였다. v2.5 부터 학습된 모형의 occlusion 기여도다. 생성식 참값과의 상관 0.83. | Page 6 risk-reason bars were fixed-range random numbers up to v2.4; from v2.5 they are model occlusion contributions (corr. 0.83 with the true formula). |
+
+### 7.4 목표 엔진 · Target engines
 
 | 엔진 · Engine | 한국어 | English |
 |---|---|---|
@@ -436,7 +476,9 @@ flowchart LR
 ```bash
 pip install -r requirements.txt
 python main.py            # 또는 · or: streamlit run app.py
-# http://localhost:8501
+# http://localhost:8501   (영어 · English: http://localhost:8501/?lang=en)
+python ai_validation.py   # 검증 표 · validation tables
+python tests/check_pages.py  # 페이지 × 언어 검사 · page × language check
 ```
 
 ```mermaid
@@ -489,7 +531,7 @@ timeline
 
 | 버전 · Ver | 날짜 · Date | 한국어 | English |
 |---|---|---|---|
-| v2.5 | 2026-11 (브랜치 · branch) | 검증 체계(5-fold · walk-forward), HGB 튜닝 · 보정, permutation importance, TF-IDF 민원 분류, UI KR/EN · 축 라벨 · 10번 모델 성능 페이지 | Validation (5-fold, walk-forward), HGB tuning & calibration, permutation importance, TF-IDF complaints, UI KR/EN, axis labels, page 10 |
+| v2.5 | 2026-11-19 | 검증 체계(5-fold · walk-forward), HGB 튜닝 · 보정, permutation importance, TF-IDF 민원 분류, UI KR/EN · 축 라벨 · 10번 모델 성능 페이지, pyarrow 19.0.1 고정(NumPy 1.26 import 오류) | Validation (5-fold, walk-forward), HGB tuning & calibration, permutation importance, TF-IDF complaints, UI KR/EN, axis labels, page 10; pinned pyarrow 19.0.1 (NumPy 1.26 import error) |
 | v2.4 | 2026-11-19 | README 를 KR·EN 나란히 + mermaid 다이어그램으로 재작성. 구현 vs 목표 구분 | README rewritten side-by-side KR/EN with mermaid; prototype vs target split |
 | v2.3 | 2026-04-15 | `statsmodels` 추가, Render `ModuleNotFoundError` 해결 | Added `statsmodels`, fixed Render `ModuleNotFoundError` |
 | v2.2 | 2026-04-13 | `ai_pipeline.py` 신설, 9번 페이지 교체 | Added `ai_pipeline.py`, rebuilt page 9 |
